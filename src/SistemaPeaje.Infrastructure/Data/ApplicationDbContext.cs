@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<TarjetaRFID> TarjetasRFID { get; set; }
     public DbSet<Turno> Turnos { get; set; }
     public DbSet<EventoTransito> EventosTransito { get; set; }
+    public DbSet<ComandoPlc> ComandosPlc { get; set; }
     public DbSet<Usuario> Usuarios { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -253,6 +254,35 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(e => e.TransaccionId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuración de ComandoPlc
+        // Configuración de ComandoPlc
+        modelBuilder.Entity<ComandoPlc>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TipoComando).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.IpDestino).HasMaxLength(15).IsRequired();
+            entity.Property(e => e.MensajeError).HasMaxLength(500);
+            entity.Property(e => e.Observaciones).HasMaxLength(200);
+
+            entity.HasOne(e => e.Carril)
+                .WithMany()
+                .HasForeignKey(e => e.CarrilId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Usuario)
+                .WithMany()
+                .HasForeignKey(e => e.UsuarioId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Empleado)
+                .WithMany()
+                .HasForeignKey(e => e.EmpleadoId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Configuración de Usuario

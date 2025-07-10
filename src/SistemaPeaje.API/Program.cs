@@ -71,6 +71,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Registrar servicios de PLC
+builder.Services.AddScoped<SistemaPeaje.Core.Interfaces.IPlcModbusService, SistemaPeaje.Infrastructure.Services.PlcModbusService>();
+
+// Configurar validaciones con FluentValidation
+// builder.Services.AddFluentValidationAutoValidation(); // Commented out - may need different package
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
