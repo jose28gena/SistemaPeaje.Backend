@@ -15,6 +15,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Carril> Carriles { get; set; }
     public DbSet<TipoVehiculo> TiposVehiculo { get; set; }
     public DbSet<TipoPago> TiposPago { get; set; }
+    public DbSet<TipoCliente> TiposCliente { get; set; }
     public DbSet<Cliente> Clientes { get; set; }
     public DbSet<Empleado> Empleados { get; set; }
     public DbSet<Tarifa> Tarifas { get; set; }
@@ -129,6 +130,22 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.Telefono).HasMaxLength(20);
             entity.Property(e => e.Direccion).HasMaxLength(200);
+
+            entity.HasOne(e => e.TipoCliente)
+                .WithMany(tc => tc.Clientes)
+                .HasForeignKey(e => e.TipoClienteId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configuración de TipoCliente
+        modelBuilder.Entity<TipoCliente>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Nombre).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Descripcion).HasMaxLength(200);
+            entity.Property(e => e.DescuentoPorcentaje).HasColumnType("decimal(5,2)");
+            entity.Property(e => e.DocumentosRequeridos).HasMaxLength(500);
         });
 
         // Configuración de Empleado

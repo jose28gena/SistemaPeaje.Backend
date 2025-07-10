@@ -25,6 +25,8 @@ public class MappingProfile : Profile
         CreateMap<UpdateCarrilDto, Carril>();
         CreateMap<TipoVehiculo, TipoVehiculoDto>();
         CreateMap<TipoPago, TipoPagoDto>();
+        CreateMap<TipoCliente, TipoClienteDto>()
+            .ForMember(dest => dest.EsActivo, opt => opt.MapFrom(src => src.Activo));
         CreateMap<Usuario, UsuarioDto>()
             .ForMember(dest => dest.EmpleadoNombre, opt => opt.MapFrom(src => src.Empleado != null ? $"{src.Empleado.Nombres} {src.Empleado.Apellidos}" : null))
             .ForMember(dest => dest.EstacionNombre, opt => opt.MapFrom(src => src.Estacion != null ? src.Estacion.Nombre : null));

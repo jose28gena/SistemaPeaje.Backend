@@ -12,6 +12,49 @@ public static class SeedData
         if (await context.Estaciones.AnyAsync())
             return;
 
+        // Datos de Tipos de Cliente
+        var tiposCliente = new List<TipoCliente>
+        {
+            new() { 
+                Nombre = "Regular", 
+                Descripcion = "Cliente regular que paga tarifa completa", 
+                EstaExentoPago = false,
+                RequiereValidacionDocumento = false,
+                FechaCreacion = DateTime.UtcNow
+            },
+            new() { 
+                Nombre = "Residente", 
+                Descripcion = "Cliente residente exento de pago de peaje", 
+                EstaExentoPago = true,
+                RequiereValidacionDocumento = true,
+                DocumentosRequeridos = "Certificado de residencia, Cédula de identidad",
+                VigenciaMeses = 12,
+                FechaCreacion = DateTime.UtcNow
+            },
+            new() { 
+                Nombre = "VIP", 
+                Descripcion = "Cliente VIP con descuento del 50%", 
+                EstaExentoPago = false,
+                DescuentoPorcentaje = 50.00m,
+                RequiereValidacionDocumento = true,
+                DocumentosRequeridos = "Membresía VIP válida",
+                VigenciaMeses = 6,
+                FechaCreacion = DateTime.UtcNow
+            },
+            new() { 
+                Nombre = "Empleado", 
+                Descripcion = "Empleado de la empresa con descuento del 75%", 
+                EstaExentoPago = false,
+                DescuentoPorcentaje = 75.00m,
+                RequiereValidacionDocumento = true,
+                DocumentosRequeridos = "Carnet de empleado",
+                FechaCreacion = DateTime.UtcNow
+            }
+        };
+
+        context.TiposCliente.AddRange(tiposCliente);
+        await context.SaveChangesAsync();
+
         // Datos de Estaciones
         var estaciones = new List<Estacion>
         {
