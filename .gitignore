@@ -1,0 +1,60 @@
+## Ignored Files
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build Results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+
+## Visual Studio
+.vs/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## Logs
+logs/
+*.log
+
+## Database
+*.mdf
+*.ldf
+*.db
+
+## Packages
+packages/
+*.nupkg
+*.snupkg
+
+## Environment Variables
+.env
+.env.local
+.env.development
+.env.production
+
+## JetBrains
+.idea/
+*.sln.iml
+
+## Mac
+.DS_Store
+
+## Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
