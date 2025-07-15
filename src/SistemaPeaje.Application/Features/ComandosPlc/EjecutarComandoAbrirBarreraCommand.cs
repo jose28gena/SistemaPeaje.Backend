@@ -124,7 +124,7 @@ public class EjecutarComandoAbrirBarreraHandler : IRequestHandler<EjecutarComand
     {
         // TODO: Implementar validación contra lista blanca en base de datos
         // Por ahora permitir IPs de rango privado
-        var esPermitida = ip.StartsWith("192.168.") || ip.StartsWith("10.") || ip.StartsWith("172.");
+        var esPermitida = ip.StartsWith("192.168.") || ip.StartsWith("10.") || ip.StartsWith("172.") || ip.StartsWith("127.0.0.1");
         return Task.FromResult(esPermitida);
     }
 

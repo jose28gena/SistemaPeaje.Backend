@@ -1,0 +1,330 @@
+# Peticiones HTTP para Sistema de Peaje
+# Archivo para usar con REST Client, Thunder Client, Postman, etc.
+# 
+# Instrucciones:
+# 1. Instalar la extensión "REST Client" en VS Code
+# 2. Abrir este archivo en VS Code
+# 3. Hacer clic en "Send Request" encima de cada petición
+# 4. Asegurar que el servidor esté ejecutándose en https://localhost:51393
+
+@baseUrl = https://localhost:51393
+@contentType = application/json
+
+### ================================
+### CONFIGURACIÓN DE PLCs
+### ================================
+
+### 1. Obtener todas las configuraciones de PLC
+GET {{baseUrl}}/api/PlcConfiguracion
+Accept: {{contentType}}
+
+### 2. Obtener configuración específica por ID
+GET {{baseUrl}}/api/PlcConfiguracion/1
+Accept: {{contentType}}
+
+### 3. Crear nueva configuración de PLC
+POST {{baseUrl}}/api/PlcConfiguracion
+Content-Type: {{contentType}}
+
+{
+  "nombre": "PLC_CASETA_01",
+  "direccionIp": "127.0.0.1",
+  "puerto": 502,
+  "unitId": 1,
+  "habilitado": true,
+  "intervaloMonitoreo": 5000,
+  "timeoutConexion": 3000,
+  "intentosReconexion": 3,
+  "observaciones": "PLC principal para caseta de pruebas"
+}
+
+### 4. Actualizar configuración de PLC existente
+PUT {{baseUrl}}/api/PlcConfiguracion/1
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "nombre": "PLC_CASETA_01_ACTUALIZADO",
+  "direccionIp": "127.0.0.1",
+  "puerto": 502,
+  "unitId": 1,
+  "habilitado": true,
+  "intervaloMonitoreo": 3000,
+  "timeoutConexion": 5000,
+  "intentosReconexion": 5,
+  "observaciones": "Configuración actualizada para mejor rendimiento"
+}
+
+### 5. Eliminar configuración de PLC
+DELETE {{baseUrl}}/api/PlcConfiguracion/1
+
+### 6. Inicializar configuraciones de prueba (seed)
+POST {{baseUrl}}/api/PlcConfiguracion/seed
+Content-Type: {{contentType}}
+
+### 7. Obtener estado de todos los workers
+GET {{baseUrl}}/api/PlcConfiguracion/workers/status
+Accept: {{contentType}}
+
+### 8. Reiniciar worker específico
+POST {{baseUrl}}/api/PlcConfiguracion/workers/1/restart
+Content-Type: {{contentType}}
+
+### 9. Detener worker específico
+POST {{baseUrl}}/api/PlcConfiguracion/workers/1/stop
+Content-Type: {{contentType}}
+
+### 10. Iniciar worker específico
+POST {{baseUrl}}/api/PlcConfiguracion/workers/1/start
+Content-Type: {{contentType}}
+
+### ================================
+### CONFIGURACIÓN DE COILS
+### ================================
+
+### 11. Obtener configuraciones de coils para un PLC
+GET {{baseUrl}}/api/PlcConfiguracion/1/coils
+Accept: {{contentType}}
+
+### 12. Crear configuración de coil
+POST {{baseUrl}}/api/PlcConfiguracion/1/coils
+Content-Type: {{contentType}}
+
+{
+  "nombre": "BARRERA_ENTRADA",
+  "direccionCoil": 98,
+  "descripcion": "Coil para control de barrera de entrada",
+  "habilitado": true,
+  "valorPorDefecto": false,
+  "observaciones": "Coil principal para apertura de barrera"
+}
+
+### 13. Actualizar configuración de coil
+PUT {{baseUrl}}/api/PlcConfiguracion/coils/1
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "nombre": "BARRERA_ENTRADA_ACTUALIZADA",
+  "direccionCoil": 98,
+  "descripcion": "Coil actualizado para control de barrera",
+  "habilitado": true,
+  "valorPorDefecto": false,
+  "observaciones": "Configuración actualizada"
+}
+
+### 14. Eliminar configuración de coil
+DELETE {{baseUrl}}/api/PlcConfiguracion/coils/1
+
+### ================================
+### COMANDOS DE CONTROL
+### ================================
+
+### 15. Abrir barrera - Comando principal
+POST {{baseUrl}}/api/comandos/abrir-barrera
+Content-Type: {{contentType}}
+
+{
+  "casetaIp": "127.0.0.1",
+  "coilAddress": 98,
+  "unitId": 1,
+  "carrilId": 1,
+  "observaciones": "Apertura de barrera desde prueba HTTP"
+}
+
+### 16. Comando personalizado de coil
+POST {{baseUrl}}/api/comandos/coil
+Content-Type: {{contentType}}
+
+{
+  "casetaIp": "127.0.0.1",
+  "coilAddress": 99,
+  "unitId": 1,
+  "valor": true,
+  "observaciones": "Activación de coil personalizado"
+}
+
+### ================================
+### MONITOREO Y EVENTOS
+### ================================
+
+### 17. Obtener estado del sistema
+GET {{baseUrl}}/api/PlcMonitor/status
+Accept: {{contentType}}
+
+### 18. Obtener eventos de tránsito
+GET {{baseUrl}}/api/MonitorEventos/eventos-transito
+Accept: {{contentType}}
+
+### 19. Obtener eventos de tránsito con filtros
+GET {{baseUrl}}/api/MonitorEventos/eventos-transito?fechaDesde=2025-01-01&fechaHasta=2025-12-31&carrilId=1
+Accept: {{contentType}}
+
+### 20. Obtener logs del sistema
+GET {{baseUrl}}/api/logs
+Accept: {{contentType}}
+
+### 21. Obtener logs con filtros
+GET {{baseUrl}}/api/logs?fecha=2025-07-14&nivel=Info
+Accept: {{contentType}}
+
+### ================================
+### PRUEBAS DE CONECTIVIDAD
+### ================================
+
+### 22. Ping al servidor
+GET {{baseUrl}}/api/health
+Accept: {{contentType}}
+
+### 23. Verificar conectividad con PLC
+GET {{baseUrl}}/api/PlcMonitor/conexion/127.0.0.1:502
+Accept: {{contentType}}
+
+### ================================
+### ENTIDADES BASE DEL SISTEMA
+### ================================
+
+### 24. Obtener carriles
+GET {{baseUrl}}/api/Carriles
+Accept: {{contentType}}
+
+### 25. Obtener estaciones
+GET {{baseUrl}}/api/Estaciones
+Accept: {{contentType}}
+
+### 26. Obtener transacciones
+GET {{baseUrl}}/api/Transacciones
+Accept: {{contentType}}
+
+### 27. Obtener transacciones con filtros
+GET {{baseUrl}}/api/Transacciones?carrilId=1&fechaDesde=2025-01-01
+Accept: {{contentType}}
+
+### 28. Crear nueva transacción
+POST {{baseUrl}}/api/Transacciones
+Content-Type: {{contentType}}
+
+{
+  "carrilId": 1,
+  "tipoVehiculoId": 1,
+  "tipoPagoId": 1,
+  "monto": 50.00,
+  "observaciones": "Transacción de prueba desde HTTP"
+}
+
+### ================================
+### REPORTES
+### ================================
+
+### 29. Reporte de transacciones por fecha
+GET {{baseUrl}}/api/Reportes/transacciones-por-fecha?fechaDesde=2025-07-01&fechaHasta=2025-07-31
+Accept: {{contentType}}
+
+### 30. Reporte de transacciones por carril
+GET {{baseUrl}}/api/Reportes/transacciones-por-carril?carrilId=1&fechaDesde=2025-07-01&fechaHasta=2025-07-31
+Accept: {{contentType}}
+
+### ================================
+### CONFIGURACIÓN GENERAL
+### ================================
+
+### 31. Obtener tipos de vehículo
+GET {{baseUrl}}/api/TiposVehiculo
+Accept: {{contentType}}
+
+### 32. Obtener tipos de pago
+GET {{baseUrl}}/api/TiposPago
+Accept: {{contentType}}
+
+### 33. Obtener tarifas
+GET {{baseUrl}}/api/Tarifas
+Accept: {{contentType}}
+
+### 34. Obtener usuarios
+GET {{baseUrl}}/api/Usuarios
+Accept: {{contentType}}
+
+### 35. Obtener empleados
+GET {{baseUrl}}/api/Empleados
+Accept: {{contentType}}
+
+### 36. Obtener turnos
+GET {{baseUrl}}/api/Turnos
+Accept: {{contentType}}
+
+### ================================
+### PRUEBAS DE ESTRÉS Y MÚLTIPLES COMANDOS
+### ================================
+
+### 37. Múltiples comandos de apertura de barrera
+POST {{baseUrl}}/api/comandos/abrir-barrera
+Content-Type: {{contentType}}
+
+{
+  "casetaIp": "127.0.0.1",
+  "coilAddress": 98,
+  "unitId": 1,
+  "carrilId": 1,
+  "observaciones": "Prueba 1 - Apertura múltiple"
+}
+
+### 38. Segundo comando de apertura
+POST {{baseUrl}}/api/comandos/abrir-barrera
+Content-Type: {{contentType}}
+
+{
+  "casetaIp": "127.0.0.1",
+  "coilAddress": 99,
+  "unitId": 1,
+  "carrilId": 2,
+  "observaciones": "Prueba 2 - Apertura múltiple"
+}
+
+### 39. Tercer comando de apertura
+POST {{baseUrl}}/api/comandos/abrir-barrera
+Content-Type: {{contentType}}
+
+{
+  "casetaIp": "127.0.0.1",
+  "coilAddress": 100,
+  "unitId": 1,
+  "carrilId": 3,
+  "observaciones": "Prueba 3 - Apertura múltiple"
+}
+
+### ================================
+### COMANDOS DE DIAGNÓSTICO
+### ================================
+
+### 40. Diagnóstico completo del sistema
+GET {{baseUrl}}/api/diagnostico
+Accept: {{contentType}}
+
+### 41. Estado detallado de PLCs
+GET {{baseUrl}}/api/PlcConfiguracion/diagnostico
+Accept: {{contentType}}
+
+### 42. Verificar configuración de coils
+GET {{baseUrl}}/api/PlcConfiguracion/coils/diagnostico
+Accept: {{contentType}}
+
+### ================================
+### NOTAS DE USO
+### ================================
+
+# Para usar este archivo:
+# 1. Instalar extensión "REST Client" en VS Code
+# 2. Asegurar que el servidor esté corriendo en https://localhost:51393
+# 3. Tener el simulador PLC ejecutándose en 127.0.0.1:502
+# 4. Hacer clic en "Send Request" encima de cada petición
+# 5. Revisar las respuestas en el panel de resultados
+
+# Comandos equivalentes en PowerShell:
+# - Ejecutar: .\test-barrera-abierta.ps1
+# - Ejecutar: .\test-sistema-escalable.ps1
+# - Ejecutar: .\test-simulador-plc.ps1
+
+# Para verificar resultados:
+# - Simulador PLC: Revisar coils en 127.0.0.1:502
+# - Logs: Get-Content 'src\SistemaPeaje.API\logs\sistema-peaje-*.txt' -Wait
+# - Base de datos: Revisar tablas PlcConfiguracion, PlcCoilConfiguracion, EventosTransito

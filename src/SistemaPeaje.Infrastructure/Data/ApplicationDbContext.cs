@@ -24,6 +24,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<EventoTransito> EventosTransito { get; set; }
     public DbSet<ComandoPlc> ComandosPlc { get; set; }
     public DbSet<Usuario> Usuarios { get; set; }
+    public DbSet<PlcConfiguracion> PlcConfiguraciones { get; set; }
+    public DbSet<PlcCoilConfiguracion> PlcCoilConfiguraciones { get; set; }
+    
+    // Nuevas entidades de liquidación
+    public DbSet<Liquidacion> Liquidaciones { get; set; }
+    public DbSet<LiquidacionDetalle> LiquidacionDetalles { get; set; }
+    public DbSet<LiquidacionDiscrepancia> LiquidacionDiscrepancias { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -312,6 +319,148 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(e => e.EstacionId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuración de PlcConfiguracion
+        modelBuilder.Entity<PlcConfiguracion>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Nombre).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Ip).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Observaciones).HasMaxLength(500);
+
+            entity.HasOne(e => e.Estacion)
+                .WithMany()
+                .HasForeignKey(e => e.EstacionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Carril)
+                .WithMany()
+                .HasForeignKey(e => e.CarrilId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.Ip, e.Puerto })
+                .IsUnique()
+                .HasDatabaseName("IX_PlcConfiguracion_Ip_Puerto");
+        });
+
+        // Configuración de PlcCoilConfiguracion
+        modelBuilder.Entity<PlcCoilConfiguracion>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Nombre).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Descripcion).HasMaxLength(500);
+            entity.Property(e => e.TipoEvento).HasMaxLength(50);
+            entity.Property(e => e.AccionEspecial).HasMaxLength(200);
+
+            entity.HasOne(e => e.PlcConfiguracion)
+                .WithMany(p => p.CoilsConfiguracion)
+                .HasForeignKey(e => e.PlcConfiguracionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.PlcConfiguracionId, e.Indice })
+                .IsUnique()
+                .HasDatabaseName("IX_PlcCoilConfiguracion_PlcId_Indice");
+        });
+
+        // Configuración de Liquidacion
+        modelBuilder.Entity<Liquidacion>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.NumeroLiquidacion).IsRequired();
+            entity.Property(e => e.TipoLiquidacion).IsRequired();
+            entity.Property(e => e.FechaInicio).IsRequired();
+            entity.Property(e => e.FechaFin).IsRequired();
+            entity.Property(e => e.FechaGeneracion).IsRequired();
+            entity.Property(e => e.MontoTotalTransacciones).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.MontoTotalRecaudado).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.DiferenciaCaja).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Estado).IsRequired();
+            entity.Property(e => e.Observaciones).HasMaxLength(1000);
+            entity.Property(e => e.NotasAprobacion).HasMaxLength(1000);
+
+            entity.HasOne(e => e.Estacion)
+                .WithMany()
+                .HasForeignKey(e => e.EstacionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Empleado)
+                .WithMany()
+                .HasForeignKey(e => e.EmpleadoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Turno)
+                .WithMany()
+                .HasForeignKey(e => e.TurnoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.CreadoPorEmpleado)
+                .WithMany()
+                .HasForeignKey(e => e.CreadoPorEmpleadoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.AprobadoPorEmpleado)
+                .WithMany()
+                .HasForeignKey(e => e.AprobadoPorEmpleadoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.NumeroLiquidacion)
+                .IsUnique()
+                .HasDatabaseName("IX_Liquidacion_NumeroLiquidacion");
+
+            entity.HasIndex(e => new { e.TipoLiquidacion, e.FechaInicio, e.FechaFin })
+                .HasDatabaseName("IX_Liquidacion_Tipo_Fecha");
+        });
+
+        // Configuración de LiquidacionDetalle
+        modelBuilder.Entity<LiquidacionDetalle>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Monto).HasColumnType("decimal(18,2)").IsRequired();
+            entity.Property(e => e.TipoPago).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.TipoVehiculo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.FechaTransaccion).IsRequired();
+            entity.Property(e => e.ObservacionesValidacion).HasMaxLength(500);
+
+            entity.HasOne(e => e.Liquidacion)
+                .WithMany(e => e.Detalles)
+                .HasForeignKey(e => e.LiquidacionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Transaccion)
+                .WithMany()
+                .HasForeignKey(e => e.TransaccionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.LiquidacionId)
+                .HasDatabaseName("IX_LiquidacionDetalle_LiquidacionId");
+        });
+
+        // Configuración de LiquidacionDiscrepancia
+        modelBuilder.Entity<LiquidacionDiscrepancia>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TipoDiscrepancia).IsRequired();
+            entity.Property(e => e.Descripcion).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.MontoDiscrepancia).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Severidad).IsRequired();
+            entity.Property(e => e.NotasResolucion).HasMaxLength(1000);
+
+            entity.HasOne(e => e.Liquidacion)
+                .WithMany(e => e.Discrepancias)
+                .HasForeignKey(e => e.LiquidacionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ResueltoPorEmpleado)
+                .WithMany()
+                .HasForeignKey(e => e.ResueltoPorEmpleadoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.LiquidacionId)
+                .HasDatabaseName("IX_LiquidacionDiscrepancia_LiquidacionId");
+
+            entity.HasIndex(e => new { e.TipoDiscrepancia, e.Severidad })
+                .HasDatabaseName("IX_LiquidacionDiscrepancia_Tipo_Severidad");
         });
     }
 }

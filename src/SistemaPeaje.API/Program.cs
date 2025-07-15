@@ -20,14 +20,20 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { 
-        Title = "Sistema Peaje API", 
+    c.SwaggerDoc("v1", new()
+    {
+        Title = "Sistema Peaje API",
         Version = "v1",
         Description = "API para el sistema de gestión de peajes"
     });
@@ -47,7 +53,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAngularApp",
         policy =>
         {
-            policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+            policy.WithOrigins("http://localhost:4203", "https://localhost:4203")
+                .WithOrigins("http://localhost:4201", "https://localhost:4201")
+                    .WithOrigins("http://localhost:4202", "https://localhost:4202")
+                    .WithOrigins("http://localhost:4200", "https://localhost:4200")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -73,6 +82,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // Registrar servicios de PLC
 builder.Services.AddScoped<SistemaPeaje.Core.Interfaces.IPlcModbusService, SistemaPeaje.Infrastructure.Services.PlcModbusService>();
+builder.Services.AddScoped<SistemaPeaje.Core.Interfaces.IPlcConfiguracionService, SistemaPeaje.Infrastructure.Services.PlcConfiguracionService>();
+
+// Registrar el Manager Service para múltiples PLCs (reemplaza al worker individual)
+builder.Services.AddSingleton<SistemaPeaje.Infrastructure.Workers.PlcManagerService>();
+builder.Services.AddHostedService<SistemaPeaje.Infrastructure.Workers.PlcManagerService>(provider =>
+    provider.GetRequiredService<SistemaPeaje.Infrastructure.Workers.PlcManagerService>());
 
 // Configurar validaciones con FluentValidation
 // builder.Services.AddFluentValidationAutoValidation(); // Commented out - may need different package

@@ -39,13 +39,21 @@ public class MappingProfile : Profile
         CreateMap<Turno, TurnoDto>()
             .ForMember(dest => dest.EmpleadoNombre, opt => opt.MapFrom(src => src.Empleado != null ? $"{src.Empleado.Nombres} {src.Empleado.Apellidos}" : null))
             .ForMember(dest => dest.EstacionNombre, opt => opt.MapFrom(src => src.Estacion != null ? src.Estacion.Nombre : null));
-        CreateMap<Tarifa, TarifaDto>()
-            .ForMember(dest => dest.TipoVehiculoNombre, opt => opt.MapFrom(src => src.TipoVehiculo!.Nombre))
-            .ForMember(dest => dest.EstacionNombre, opt => opt.MapFrom(src => src.Estacion != null ? src.Estacion.Nombre : null));
-        CreateMap<Turno, TurnoDto>()
+        
+        // Liquidacion mappings
+        CreateMap<Liquidacion, LiquidacionDto>()
             .ForMember(dest => dest.EmpleadoNombre, opt => opt.MapFrom(src => 
                 src.Empleado != null ? $"{src.Empleado.Nombres} {src.Empleado.Apellidos}" : null))
-            .ForMember(dest => dest.EstacionNombre, opt => opt.MapFrom(src => src.Estacion != null ? src.Estacion.Nombre : null));
+            .ForMember(dest => dest.EstacionNombre, opt => opt.MapFrom(src => src.Estacion != null ? src.Estacion.Nombre : null))
+            .ForMember(dest => dest.AprobadoPorEmpleadoNombre, opt => opt.MapFrom(src => 
+                src.AprobadoPorEmpleado != null ? $"{src.AprobadoPorEmpleado.Nombres} {src.AprobadoPorEmpleado.Apellidos}" : null))
+            .ForMember(dest => dest.CreadoPorEmpleadoNombre, opt => opt.MapFrom(src => 
+                src.CreadoPorEmpleado != null ? $"{src.CreadoPorEmpleado.Nombres} {src.CreadoPorEmpleado.Apellidos}" : null));
+        
+        CreateMap<LiquidacionDetalle, LiquidacionDetalleDto>();
+        CreateMap<LiquidacionDiscrepancia, LiquidacionDiscrepanciaDto>()
+            .ForMember(dest => dest.ResueltoPorEmpleadoNombre, opt => opt.MapFrom(src => 
+                src.ResueltoPorEmpleado != null ? $"{src.ResueltoPorEmpleado.Nombres} {src.ResueltoPorEmpleado.Apellidos}" : null));
     }
 }
 

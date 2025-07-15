@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaPeaje.Infrastructure.Data;
 using SistemaPeaje.Core.Interfaces;
 using SistemaPeaje.Infrastructure.Repositories;
+using SistemaPeaje.Infrastructure.Services;
 
 namespace SistemaPeaje.Infrastructure;
 
@@ -17,6 +18,7 @@ public static class DependencyInjection
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<ILiquidacionService, LiquidacionService>();
 
         return services;
     }

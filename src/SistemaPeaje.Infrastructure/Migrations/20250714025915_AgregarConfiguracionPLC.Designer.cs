@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SistemaPeaje.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using SistemaPeaje.Infrastructure.Data;
 namespace SistemaPeaje.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250714025915_AgregarConfiguracionPLC")]
+    partial class AgregarConfiguracionPLC
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -390,226 +393,6 @@ namespace SistemaPeaje.Infrastructure.Migrations
                     b.HasIndex("TransaccionId");
 
                     b.ToTable("EventosTransito");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.Liquidacion", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("AprobadoPorEmpleadoId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CreadoPorEmpleadoId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("DiferenciaCaja")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("EmpleadoId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("EstacionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Estado")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("FechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaAprobacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaFin")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaGeneracion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaInicio")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaUltimaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("MontoTotalRecaudado")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("MontoTotalTransacciones")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("NotasAprobacion")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<Guid>("NumeroLiquidacion")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Observaciones")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("RequiereAprobacion")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("TipoLiquidacion")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalTransacciones")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TurnoId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AprobadoPorEmpleadoId");
-
-                    b.HasIndex("CreadoPorEmpleadoId");
-
-                    b.HasIndex("EmpleadoId");
-
-                    b.HasIndex("EstacionId");
-
-                    b.HasIndex("NumeroLiquidacion")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Liquidacion_NumeroLiquidacion");
-
-                    b.HasIndex("TurnoId");
-
-                    b.HasIndex("TipoLiquidacion", "FechaInicio", "FechaFin")
-                        .HasDatabaseName("IX_Liquidacion_Tipo_Fecha");
-
-                    b.ToTable("Liquidaciones");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.LiquidacionDetalle", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("CarrilId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("FechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaTransaccion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("LiquidacionId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Monto")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ObservacionesValidacion")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("TipoPago")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("TipoVehiculo")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("TransaccionId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Validado")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LiquidacionId")
-                        .HasDatabaseName("IX_LiquidacionDetalle_LiquidacionId");
-
-                    b.HasIndex("TransaccionId");
-
-                    b.ToTable("LiquidacionDetalles");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.LiquidacionDiscrepancia", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Descripcion")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("FechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaResolucion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("LiquidacionId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("MontoDiscrepancia")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("NotasResolucion")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("Resuelta")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("ResueltoPorEmpleadoId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Severidad")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TipoDiscrepancia")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LiquidacionId")
-                        .HasDatabaseName("IX_LiquidacionDiscrepancia_LiquidacionId");
-
-                    b.HasIndex("ResueltoPorEmpleadoId");
-
-                    b.HasIndex("TipoDiscrepancia", "Severidad")
-                        .HasDatabaseName("IX_LiquidacionDiscrepancia_Tipo_Severidad");
-
-                    b.ToTable("LiquidacionDiscrepancias");
                 });
 
             modelBuilder.Entity("SistemaPeaje.Core.Entities.PlcCoilConfiguracion", b =>
@@ -1277,82 +1060,6 @@ namespace SistemaPeaje.Infrastructure.Migrations
                     b.Navigation("Transaccion");
                 });
 
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.Liquidacion", b =>
-                {
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "AprobadoPorEmpleado")
-                        .WithMany()
-                        .HasForeignKey("AprobadoPorEmpleadoId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "CreadoPorEmpleado")
-                        .WithMany()
-                        .HasForeignKey("CreadoPorEmpleadoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "Empleado")
-                        .WithMany()
-                        .HasForeignKey("EmpleadoId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Estacion", "Estacion")
-                        .WithMany()
-                        .HasForeignKey("EstacionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Turno", "Turno")
-                        .WithMany()
-                        .HasForeignKey("TurnoId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("AprobadoPorEmpleado");
-
-                    b.Navigation("CreadoPorEmpleado");
-
-                    b.Navigation("Empleado");
-
-                    b.Navigation("Estacion");
-
-                    b.Navigation("Turno");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.LiquidacionDetalle", b =>
-                {
-                    b.HasOne("SistemaPeaje.Core.Entities.Liquidacion", "Liquidacion")
-                        .WithMany("Detalles")
-                        .HasForeignKey("LiquidacionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Transaccion", "Transaccion")
-                        .WithMany()
-                        .HasForeignKey("TransaccionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Liquidacion");
-
-                    b.Navigation("Transaccion");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.LiquidacionDiscrepancia", b =>
-                {
-                    b.HasOne("SistemaPeaje.Core.Entities.Liquidacion", "Liquidacion")
-                        .WithMany("Discrepancias")
-                        .HasForeignKey("LiquidacionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "ResueltoPorEmpleado")
-                        .WithMany()
-                        .HasForeignKey("ResueltoPorEmpleadoId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Liquidacion");
-
-                    b.Navigation("ResueltoPorEmpleado");
-                });
-
             modelBuilder.Entity("SistemaPeaje.Core.Entities.PlcCoilConfiguracion", b =>
                 {
                     b.HasOne("SistemaPeaje.Core.Entities.PlcConfiguracion", "PlcConfiguracion")
@@ -1521,13 +1228,6 @@ namespace SistemaPeaje.Infrastructure.Migrations
                     b.Navigation("Carriles");
 
                     b.Navigation("Transacciones");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.Liquidacion", b =>
-                {
-                    b.Navigation("Detalles");
-
-                    b.Navigation("Discrepancias");
                 });
 
             modelBuilder.Entity("SistemaPeaje.Core.Entities.PlcConfiguracion", b =>
