@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ILiquidacionService, LiquidacionService>();
+        services.AddScoped<ITarjetaRfidService, TarjetaRfidService>();
 
         return services;
     }
