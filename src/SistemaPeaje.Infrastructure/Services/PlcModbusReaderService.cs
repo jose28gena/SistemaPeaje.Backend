@@ -41,27 +41,32 @@ public class PlcModbusReaderService
                 count, startAddress, _ip, _port);
 
             using var client = new TcpClient();
-            client.ReceiveTimeout = 3000; // Timeout más corto para monitoreo
-            client.SendTimeout = 3000;
+            client.ReceiveTimeout = 5000; // Timeout de 5 segundos para recepción
+            client.SendTimeout = 5000;    // Timeout de 5 segundos para envío
             
-            await client.ConnectAsync(_ip, _port);
+            // Timeout de 5 segundos para la conexión inicial
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await client.ConnectAsync(_ip, _port).WaitAsync(cts.Token);
             using var stream = client.GetStream();
 
             // Crear mensaje Modbus TCP para leer múltiples coils (función 01)
             var modbusTcpMessage = CreateReadMultipleCoilsMessage(startAddress, count, _unitId);
             
-            // Enviar mensaje
-            await stream.WriteAsync(modbusTcpMessage);
+            // Enviar mensaje con timeout
+            using var writeCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await stream.WriteAsync(modbusTcpMessage, writeCts.Token);
             
-            // Leer respuesta
+            // Leer respuesta con timeout
             var responseHeader = new byte[9]; // MBAP header + function code + byte count
-            await stream.ReadAsync(responseHeader);
+            using var readCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await stream.ReadAsync(responseHeader, readCts.Token);
             
             if (responseHeader[7] == 0x01) // Función 01 (Read Coils)
             {
                 var byteCount = responseHeader[8];
                 var dataBytes = new byte[byteCount];
-                await stream.ReadAsync(dataBytes);
+                using var dataCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                await stream.ReadAsync(dataBytes, dataCts.Token);
                 
                 return ExtractCoilStates(dataBytes, count);
             }
@@ -77,6 +82,11 @@ public class PlcModbusReaderService
         catch (TimeoutException ex)
         {
             _logger.LogError(ex, "Timeout al leer coils del PLC {IP}:{Port}", _ip, _port);
+            return new bool[count];
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogError(ex, "Timeout de conexión (5s) al leer coils del PLC {IP}:{Port}", _ip, _port);
             return new bool[count];
         }
         catch (Exception ex)
@@ -103,14 +113,22 @@ public class PlcModbusReaderService
         try
         {
             using var client = new TcpClient();
-            client.ReceiveTimeout = 2000;
-            client.SendTimeout = 2000;
+            client.ReceiveTimeout = 2000; // Timeout de 2 segundos para recepción
+            client.SendTimeout = 2000;    // Timeout de 5 segundos para envío
             
-            await client.ConnectAsync(_ip, _port);
+            // Timeout de 5 segundos para la conexión inicial
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await client.ConnectAsync(_ip, _port).WaitAsync(cts.Token);
             return client.Connected;
         }
-        catch
+        catch (OperationCanceledException)
         {
+            _logger.LogDebug("Timeout de conexión (2s) al verificar PLC {IP}:{Port}", _ip, _port);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Error al verificar conexión PLC {IP}:{Port}", _ip, _port);
             return false;
         }
     }

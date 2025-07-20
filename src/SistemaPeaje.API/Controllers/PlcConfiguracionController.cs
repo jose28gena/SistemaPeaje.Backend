@@ -45,6 +45,24 @@ namespace SistemaPeaje.API.Controllers
         }
 
         /// <summary>
+        /// Obtiene todas las configuraciones con sus coils incluidos para monitoreo
+        /// </summary>
+        [HttpGet("with-coils")]
+        public async Task<IActionResult> GetWithCoils()
+        {
+            try
+            {
+                var configuraciones = await _configService.ObtenerTodasLasConfiguracionesAsync();
+                return Ok(configuraciones);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener configuraciones con coils");
+                return StatusCode(500, new { message = "Error interno del servidor" });
+            }
+        }
+
+        /// <summary>
         /// Obtiene configuraciones activas
         /// </summary>
         [HttpGet("activas")]
@@ -301,6 +319,104 @@ namespace SistemaPeaje.API.Controllers
                 return StatusCode(500, new { message = "Error al crear datos de ejemplo" });
             }
         }
+
+        /// <summary>
+        /// Obtiene información de monitoreo en tiempo real de todas las estaciones
+        /// </summary>
+        [HttpGet("monitoring")]
+        public async Task<IActionResult> GetMonitoringData()
+        {
+            try
+            {
+                // Timeout de 15 segundos para toda la operación
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                
+                var configuraciones = await _configService.ObtenerConfiguracionesActivasAsync();
+                
+                var monitoringData = configuraciones.Select(config => new StationMonitoringDto
+                {
+                    Id = config.Id,
+                    Nombre = config.Nombre,
+                    Ip = config.Ip,
+                    Puerto = config.Puerto,
+                    EstacionNombre = config.Estacion?.Nombre ?? "Sin estación",
+                    CarrilNombre = config.Carril?.Numero.ToString() ?? "Sin carril",
+                    EstaConectado = config.EstaConectado,
+                    UltimaConexion = config.UltimaConexion,
+                    WorkerActivo = _managerService.IsWorkerRunning(config.Id),
+                    EstadoWorker = "Verificando...", // Se actualizará después
+                    CoilsConfiguracion = config.CoilsConfiguracion?.Select(c => new PlcCoilConfiguracionDto
+                    {
+                        Indice = c.Indice,
+                        Direccion = c.Direccion,
+                        Nombre = c.Nombre,
+                        Descripcion = c.Descripcion,
+                        TipoEvento = c.TipoEvento,
+                        GenerarEvento = c.GenerarEvento,
+                        EsAlarma = c.EsAlarma,
+                        AccionEspecial = c.AccionEspecial,
+                        EstadoActual = c.EstadoActual, // Incluir estado actual
+                        UltimaActualizacion = c.UltimaActualizacion // Incluir última actualización
+                    }).ToList()
+                }).ToList();
+
+                // Obtener estados de workers con timeout
+                try
+                {
+                    var estadosWorkers = await _managerService.ObtenerEstadoWorkersAsync().WaitAsync(cts.Token);
+                    
+                    foreach (var item in monitoringData)
+                    {
+                        if (estadosWorkers.TryGetValue(item.Id, out var estado))
+                        {
+                            item.EstadoWorker = estado;
+                        }
+                        else
+                        {
+                            item.EstadoWorker = item.WorkerActivo ? "Desconocido" : "Inactivo";
+                        }
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogWarning("Timeout al obtener estados de workers");
+                    foreach (var item in monitoringData)
+                    {
+                        item.EstadoWorker = "Timeout";
+                    }
+                }
+
+                return Ok(monitoringData);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("Timeout en endpoint de monitoreo");
+                return StatusCode(408, new { message = "Timeout al obtener datos de monitoreo" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener datos de monitoreo");
+                return StatusCode(500, new { message = "Error interno del servidor" });
+            }
+        }
+    }
+
+    /// <summary>
+    /// DTO para monitoreo de estaciones
+    /// </summary>
+    public class StationMonitoringDto
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Ip { get; set; } = string.Empty;
+        public int Puerto { get; set; }
+        public string EstacionNombre { get; set; } = string.Empty;
+        public string CarrilNombre { get; set; } = string.Empty;
+        public bool EstaConectado { get; set; }
+        public DateTime? UltimaConexion { get; set; }
+        public bool WorkerActivo { get; set; }
+        public string EstadoWorker { get; set; } = "Desconocido";
+        public List<PlcCoilConfiguracionDto>? CoilsConfiguracion { get; set; }
     }
 
     /// <summary>
@@ -332,5 +448,7 @@ namespace SistemaPeaje.API.Controllers
         public bool GenerarEvento { get; set; } = true;
         public bool EsAlarma { get; set; } = false;
         public string? AccionEspecial { get; set; }
+        public bool EstadoActual { get; set; } = false; // Estado actual del coil
+        public DateTime? UltimaActualizacion { get; set; } // Última actualización del estado
     }
 }

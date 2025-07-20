@@ -141,12 +141,43 @@ namespace SistemaPeaje.Infrastructure.Workers
         {
             var estados = new Dictionary<int, string>();
             
-            foreach (var (configId, worker) in _activeWorkers)
+            // Timeout global de 8 segundos (3 PLCs x 3s cada uno máximo)
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+            
+            var tasks = _activeWorkers.Select(async kvp =>
             {
-                estados[configId] = await worker.ObtenerEstadoAsync();
+                try
+                {
+                    var estado = await kvp.Value.ObtenerEstadoAsync().WaitAsync(cts.Token);
+                    return new { ConfigId = kvp.Key, Estado = estado };
+                }
+                catch (OperationCanceledException)
+                {
+                    return new { ConfigId = kvp.Key, Estado = "Timeout" };
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error al obtener estado del worker {ConfigId}", kvp.Key);
+                    return new { ConfigId = kvp.Key, Estado = "Error" };
+                }
+            });
+
+            var resultados = await Task.WhenAll(tasks);
+            
+            foreach (var resultado in resultados)
+            {
+                estados[resultado.ConfigId] = resultado.Estado;
             }
 
             return estados;
+        }
+
+        /// <summary>
+        /// Verifica si un worker está activo para una configuración específica
+        /// </summary>
+        public bool IsWorkerRunning(int configId)
+        {
+            return _activeWorkers.ContainsKey(configId);
         }
     }
 
@@ -191,6 +222,22 @@ namespace SistemaPeaje.Infrastructure.Workers
 
             _estadosAnteriores = new bool[_config.CantidadCoils];
 
+            // Verificar estado inicial de conexión antes de iniciar el monitoreo
+            try
+            {
+                var conexionInicial = await _plcReader.VerificarConexionAsync();
+                if (conexionInicial != _config.EstaConectado)
+                {
+                    _logger.LogInformation("📍 Estado inicial de conexión para PLC {Nombre}: {Estado}", 
+                        _config.Nombre, conexionInicial ? "Conectado" : "Desconectado");
+                    await ActualizarEstadoConexion(conexionInicial);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudo verificar estado inicial de conexión para PLC {Nombre}", _config.Nombre);
+            }
+
             _workerTask = EjecutarMonitoreoAsync(_cancellationTokenSource.Token);
             await Task.CompletedTask;
         }
@@ -224,8 +271,30 @@ namespace SistemaPeaje.Infrastructure.Workers
 
             if (_plcReader != null)
             {
-                var conectado = await _plcReader.VerificarConexionAsync();
-                return conectado ? "Conectado" : "Desconectado";
+                try
+                {
+                    // Timeout agresivo de 3 segundos para garantizar respuesta rápida del endpoint
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                    var conectado = await _plcReader.VerificarConexionAsync().WaitAsync(cts.Token);
+                    
+                    // Actualizar estado local si es diferente
+                    if (conectado != _config.EstaConectado)
+                    {
+                        _logger.LogDebug("Estado local inconsistente para PLC {Nombre}: Local={EstadoLocal}, Real={EstadoReal}", 
+                            _config.Nombre, _config.EstaConectado, conectado);
+                    }
+                    
+                    return conectado ? "Conectado" : "Desconectado";
+                }
+                catch (OperationCanceledException)
+                {
+                    return "Timeout";
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Error al verificar conexión para PLC {Nombre}", _config.Nombre);
+                    return "Error de conexión";
+                }
             }
 
             return "Iniciando";
@@ -244,6 +313,7 @@ namespace SistemaPeaje.Infrastructure.Workers
 
             bool conexionAnterior = false;
             int errorCount = 0;
+            int iterationCount = 0;
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -252,7 +322,9 @@ namespace SistemaPeaje.Infrastructure.Workers
                     if (_plcReader == null)
                         break;
 
-                    // Verificar conexión
+                    iterationCount++;
+
+                    // Verificar conexión (usa timeout interno de 5s del PlcModbusReaderService)
                     var conexionActual = await _plcReader.VerificarConexionAsync();
                     
                     if (conexionActual != conexionAnterior)
@@ -264,12 +336,20 @@ namespace SistemaPeaje.Infrastructure.Workers
 
                     if (conexionActual)
                     {
-                        // Leer coils
+                        // Leer coils (usa timeout interno de 5s del PlcModbusReaderService)
                         var estadosActuales = await _plcReader.LeerCoilsAsync(
                             _config.DireccionInicial, 
                             _config.CantidadCoils);
 
+                        // Procesar cambios normales
                         await ProcesarCambiosDeEstado(_estadosAnteriores, estadosActuales);
+                        
+                        // Sincronizar todos los estados cada 10 iteraciones (aproximadamente cada 10 segundos)
+                        // para asegurar que la BD esté actualizada incluso si no hay cambios
+                        if (iterationCount % 10 == 0)
+                        {
+                            await SincronizarTodosLosEstados(estadosActuales);
+                        }
                         
                         if (_config.HabilitarLoggingPeriodico)
                         {
@@ -310,8 +390,25 @@ namespace SistemaPeaje.Infrastructure.Workers
                 var configService = scope.ServiceProvider.GetRequiredService<IPlcConfiguracionService>();
                 await configService.ActualizarEstadoConexionAsync(_config.Id, conectado);
 
+                // Actualizar también el estado local para mantener consistencia
+                _config.EstaConectado = conectado;
+                if (conectado)
+                {
+                    _config.UltimaConexion = DateTime.UtcNow;
+                    // Cuando se reconecta, forzar sincronización inmediata de todos los estados
+                    if (_plcReader != null)
+                    {
+                        _logger.LogInformation("🔄 Forzando sincronización inmediata tras reconexión para PLC {Nombre}", _config.Nombre);
+                        var estadosActuales = await _plcReader.LeerCoilsAsync(
+                            _config.DireccionInicial, 
+                            _config.CantidadCoils);
+                        await SincronizarTodosLosEstados(estadosActuales);
+                    }
+                }
+                _config.FechaActualizacion = DateTime.UtcNow;
+
                 _logger.LogInformation(conectado ? 
-                    "✅ PLC {Nombre} conectado" : 
+                    "✅ PLC {Nombre} conectado y estado sincronizado" : 
                     "❌ PLC {Nombre} desconectado", _config.Nombre);
             }
             catch (Exception ex)
@@ -326,6 +423,7 @@ namespace SistemaPeaje.Infrastructure.Workers
             {
                 using var scope = _serviceProvider.CreateScope();
                 var unitOfWork = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var coilsActualizados = new List<Core.Entities.PlcCoilConfiguracion>();
                 
                 for (int i = 0; i < Math.Min(estadosAnteriores.Length, estadosActuales.Length); i++)
                 {
@@ -342,6 +440,7 @@ namespace SistemaPeaje.Infrastructure.Workers
                         {
                             coilConfig.EstadoActual = estadosActuales[i];
                             coilConfig.UltimaActualizacion = DateTime.UtcNow;
+                            coilsActualizados.Add(coilConfig);
                         }
 
                         // Registrar evento en BD si está habilitado
@@ -354,10 +453,85 @@ namespace SistemaPeaje.Infrastructure.Workers
                         await ProcesarEventoEspecial(coilConfig, estadosActuales[i]);
                     }
                 }
+
+                // Guardar cambios de estados de coils en la base de datos
+                if (coilsActualizados.Any() && unitOfWork != null)
+                {
+                    try
+                    {
+                        // Actualizar cada entidad usando el repositorio
+                        var repository = unitOfWork.Repository<Core.Entities.PlcCoilConfiguracion>();
+                        foreach (var coil in coilsActualizados)
+                        {
+                            await repository.UpdateAsync(coil);
+                        }
+                        
+                        await unitOfWork.SaveChangesAsync();
+                        _logger.LogInformation("💾 Estados de {Count} coils actualizados en BD para PLC {Nombre}", 
+                            coilsActualizados.Count, _config.Nombre);
+                    }
+                    catch (Exception saveEx)
+                    {
+                        _logger.LogError(saveEx, "Error al guardar estados de coils en BD para PLC {Nombre}", _config.Nombre);
+                    }
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al procesar cambios de estado en PLC {Nombre}", _config.Nombre);
+            }
+        }
+
+        /// <summary>
+        /// Sincroniza todos los estados de los coils con la base de datos, sin importar si cambiaron
+        /// </summary>
+        private async Task SincronizarTodosLosEstados(bool[] estadosActuales)
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var unitOfWork = scope.ServiceProvider.GetService<IUnitOfWork>();
+                
+                if (unitOfWork == null) return;
+
+                var coilsActualizados = new List<Core.Entities.PlcCoilConfiguracion>();
+                
+                for (int i = 0; i < Math.Min(_config.CoilsConfiguracion.Count, estadosActuales.Length); i++)
+                {
+                    var coilConfig = _config.CoilsConfiguracion.FirstOrDefault(c => c.Indice == i);
+                    if (coilConfig != null)
+                    {
+                        // Actualizar siempre el estado actual y la fecha de actualización
+                        coilConfig.EstadoActual = estadosActuales[i];
+                        coilConfig.UltimaActualizacion = DateTime.UtcNow;
+                        coilsActualizados.Add(coilConfig);
+                    }
+                }
+
+                if (coilsActualizados.Any())
+                {
+                    try
+                    {
+                        // Actualizar cada entidad usando el repositorio
+                        var repository = unitOfWork.Repository<Core.Entities.PlcCoilConfiguracion>();
+                        foreach (var coil in coilsActualizados)
+                        {
+                            await repository.UpdateAsync(coil);
+                        }
+                        
+                        await unitOfWork.SaveChangesAsync();
+                        _logger.LogInformation("🔄 Sincronizados {Count} estados de coils en BD para PLC {Nombre}", 
+                            coilsActualizados.Count, _config.Nombre);
+                    }
+                    catch (Exception saveEx)
+                    {
+                        _logger.LogError(saveEx, "Error al sincronizar estados de coils en BD para PLC {Nombre}", _config.Nombre);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al sincronizar todos los estados en PLC {Nombre}", _config.Nombre);
             }
         }
 
