@@ -32,6 +32,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<LiquidacionDetalle> LiquidacionDetalles { get; set; }
     public DbSet<LiquidacionDiscrepancia> LiquidacionDiscrepancias { get; set; }
 
+    // Nuevas entidades del módulo de administración de turnos
+    public DbSet<TurnoTemplate> TurnoTemplates { get; set; }
+    public DbSet<TurnoAsignacion> TurnoAsignaciones { get; set; }
+    public DbSet<RegistroTiempo> RegistrosTiempo { get; set; }
+    public DbSet<TurnoEvento> TurnoEventos { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

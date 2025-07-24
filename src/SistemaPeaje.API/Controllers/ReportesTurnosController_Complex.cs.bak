@@ -1,0 +1,283 @@
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using SistemaPeaje.Application.Features.TurnosAdmin.Reportes;
+using SistemaPeaje.Application.DTOs.TurnosAdmin;
+
+namespace SistemaPeaje.API.Controllers;
+
+[ApiController]
+[Route("api/turnos-admin/[controller]")]
+public class ReportesTurnosController : ControllerBase
+{
+    private readonly IMediator _mediator;
+
+    public ReportesTurnosController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+
+    /// <summary>
+    /// Obtiene reporte de productividad por empleado
+    /// </summary>
+    [HttpGet("productividad-empleados")]
+    public async Task<ActionResult<ReporteProductividadEmpleadosDto>> GetReporteProductividadEmpleados(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? empleadoId = null,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetReporteProductividadEmpleadosQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            EmpleadoId = empleadoId,
+            EstacionId = estacionId
+        };
+        
+        var reporte = await _mediator.Send(query);
+        return Ok(reporte);
+    }
+
+    /// <summary>
+    /// Obtiene reporte de rendimiento por turnos
+    /// </summary>
+    [HttpGet("rendimiento-turnos")]
+    public async Task<ActionResult<ReporteRendimientoTurnosDto>> GetReporteRendimientoTurnos(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? estacionId = null,
+        [FromQuery] string? tipoTurno = null)
+    {
+        var query = new GetReporteRendimientoTurnosQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            EstacionId = estacionId,
+            TipoTurno = tipoTurno
+        };
+        
+        var reporte = await _mediator.Send(query);
+        return Ok(reporte);
+    }
+
+    /// <summary>
+    /// Obtiene reporte de asistencia y puntualidad
+    /// </summary>
+    [HttpGet("asistencia-puntualidad")]
+    public async Task<ActionResult<ReporteAsistenciaPuntualidadDto>> GetReporteAsistenciaPuntualidad(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? empleadoId = null,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetReporteAsistenciaPuntualidadQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            EmpleadoId = empleadoId,
+            EstacionId = estacionId
+        };
+        
+        var reporte = await _mediator.Send(query);
+        return Ok(reporte);
+    }
+
+    /// <summary>
+    /// Obtiene reporte de horas extras
+    /// </summary>
+    [HttpGet("horas-extras")]
+    public async Task<ActionResult<ReporteHorasExtrasDto>> GetReporteHorasExtras(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? empleadoId = null,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetReporteHorasExtrasQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            EmpleadoId = empleadoId,
+            EstacionId = estacionId
+        };
+        
+        var reporte = await _mediator.Send(query);
+        return Ok(reporte);
+    }
+
+    /// <summary>
+    /// Obtiene reporte de costos laborales
+    /// </summary>
+    [HttpGet("costos-laborales")]
+    public async Task<ActionResult<ReporteCostosLaboralesDto>> GetReporteCostosLaborales(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? estacionId = null,
+        [FromQuery] bool incluirHorasExtras = true)
+    {
+        var query = new GetReporteCostosLaboralesQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            EstacionId = estacionId,
+            IncluirHorasExtras = incluirHorasExtras
+        };
+        
+        var reporte = await _mediator.Send(query);
+        return Ok(reporte);
+    }
+
+    /// <summary>
+    /// Obtiene reporte de incidencias y eventos
+    /// </summary>
+    [HttpGet("incidencias-eventos")]
+    public async Task<ActionResult<ReporteIncidenciasEventosDto>> GetReporteIncidenciasEventos(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? estacionId = null,
+        [FromQuery] string? tipoEvento = null,
+        [FromQuery] string? prioridad = null)
+    {
+        var query = new GetReporteIncidenciasEventosQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            EstacionId = estacionId,
+            TipoEvento = tipoEvento,
+            Prioridad = prioridad
+        };
+        
+        var reporte = await _mediator.Send(query);
+        return Ok(reporte);
+    }
+
+    /// <summary>
+    /// Obtiene dashboard ejecutivo con métricas clave
+    /// </summary>
+    [HttpGet("dashboard-ejecutivo")]
+    public async Task<ActionResult<DashboardEjecutivoDto>> GetDashboardEjecutivo(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetDashboardEjecutivoQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            EstacionId = estacionId
+        };
+        
+        var dashboard = await _mediator.Send(query);
+        return Ok(dashboard);
+    }
+
+    /// <summary>
+    /// Obtiene reporte de cobertura de turnos
+    /// </summary>
+    [HttpGet("cobertura-turnos")]
+    public async Task<ActionResult<ReporteCoberturaDto>> GetReporteCobertura(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetReporteCoberturaQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            EstacionId = estacionId
+        };
+        
+        var reporte = await _mediator.Send(query);
+        return Ok(reporte);
+    }
+
+    /// <summary>
+    /// Obtiene análisis comparativo de períodos
+    /// </summary>
+    [HttpGet("analisis-comparativo")]
+    public async Task<ActionResult<AnalisisComparativoDto>> GetAnalisisComparativo(
+        [FromQuery] DateTime periodo1Desde,
+        [FromQuery] DateTime periodo1Hasta,
+        [FromQuery] DateTime periodo2Desde,
+        [FromQuery] DateTime periodo2Hasta,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetAnalisisComparativoQuery
+        {
+            Periodo1Desde = periodo1Desde,
+            Periodo1Hasta = periodo1Hasta,
+            Periodo2Desde = periodo2Desde,
+            Periodo2Hasta = periodo2Hasta,
+            EstacionId = estacionId
+        };
+        
+        var analisis = await _mediator.Send(query);
+        return Ok(analisis);
+    }
+
+    /// <summary>
+    /// Exporta reporte a Excel
+    /// </summary>
+    [HttpGet("exportar/{tipoReporte}")]
+    public async Task<ActionResult> ExportarReporte(
+        string tipoReporte,
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? estacionId = null,
+        [FromQuery] int? empleadoId = null,
+        [FromQuery] string formato = "excel")
+    {
+        try
+        {
+            var command = new ExportarReporteCommand
+            {
+                TipoReporte = tipoReporte,
+                FechaDesde = fechaDesde,
+                FechaHasta = fechaHasta,
+                EstacionId = estacionId,
+                EmpleadoId = empleadoId,
+                Formato = formato
+            };
+            
+            var archivo = await _mediator.Send(command);
+            
+            return File(archivo.Contenido, archivo.ContentType, archivo.NombreArchivo);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene métricas en tiempo real
+    /// </summary>
+    [HttpGet("metricas-tiempo-real")]
+    public async Task<ActionResult<MetricasTiempoRealDto>> GetMetricasTiempoReal([FromQuery] int? estacionId = null)
+    {
+        var query = new GetMetricasTiempoRealQuery { EstacionId = estacionId };
+        var metricas = await _mediator.Send(query);
+        return Ok(metricas);
+    }
+
+    /// <summary>
+    /// Obtiene proyecciones y tendencias
+    /// </summary>
+    [HttpGet("proyecciones")]
+    public async Task<ActionResult<ProyeccionesTendenciasDto>> GetProyeccionesTendencias(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int diasProyeccion = 30,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetProyeccionesTendenciasQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            DiasProyeccion = diasProyeccion,
+            EstacionId = estacionId
+        };
+        
+        var proyecciones = await _mediator.Send(query);
+        return Ok(proyecciones);
+    }
+}

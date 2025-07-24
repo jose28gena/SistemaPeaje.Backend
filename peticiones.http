@@ -1,0 +1,259 @@
+### Sistema PLC Escalable - Peticiones HTTP
+### Archivo para REST Client / Thunder Client / Postman
+
+# Variables de entorno
+@baseUrl = https://localhost:51393
+@simuladorIp = 127.0.0.1
+
+### 1. Comando Abrir Barrera (Coil 96 - 000097 en simulador)
+POST {{baseUrl}}/api/comandos/abrir-barrera
+Content-Type: application/json
+
+{
+  "casetaIp": "{{simuladorIp}}",
+  "coilAddress": 96,
+  "unitId": 1,
+  "carrilId": 1,
+  "observaciones": "Comando desde archivo .http - Coil 000097"
+}
+
+### 2. Comando Abrir Barrera (Coil 97 - 000098 en simulador)
+POST {{baseUrl}}/api/comandos/abrir-barrera
+Content-Type: application/json
+
+{
+  "casetaIp": "{{simuladorIp}}",
+  "coilAddress": 97,
+  "unitId": 1,
+  "carrilId": 1,
+  "observaciones": "Comando desde archivo .http - Coil 000098"
+}
+
+### 3. Comando Abrir Barrera (Coil 98 - 000099 en simulador)
+POST {{baseUrl}}/api/comandos/abrir-barrera
+Content-Type: application/json
+
+{
+  "casetaIp": "{{simuladorIp}}",
+  "coilAddress": 98,
+  "unitId": 1,
+  "carrilId": 1,
+  "observaciones": "Comando desde archivo .http - Coil 000099"
+}
+
+### 4. Verificar Estado de Workers
+GET {{baseUrl}}/api/PlcConfiguracion/workers/status
+Accept: application/json
+
+### 5. Obtener Configuraciones Activas
+GET {{baseUrl}}/api/PlcConfiguracion/activas
+Accept: application/json
+
+### 6. Obtener Todas las Configuraciones
+GET {{baseUrl}}/api/PlcConfiguracion
+Accept: application/json
+
+### 7. Crear Nueva Configuración PLC
+POST {{baseUrl}}/api/PlcConfiguracion
+Content-Type: application/json
+
+{
+  "nombre": "PLC Test HTTP",
+  "ip": "{{simuladorIp}}",
+  "puerto": 502,
+  "unitId": 1,
+  "direccionInicial": 100,
+  "cantidadCoils": 4,
+  "intervaloMonitoreo": 1000,
+  "habilitarLoggingPeriodico": true,
+  "estacionId": 1,
+  "carrilId": 1,
+  "observaciones": "PLC creado desde archivo .http",
+  "coilsConfiguracion": [
+    {
+      "indice": 0,
+      "direccion": 100,
+      "nombre": "TestCoil1",
+      "tipoEvento": "TEST_EVENT_1",
+      "generarEvento": true,
+      "esAlarma": false
+    },
+    {
+      "indice": 1,
+      "direccion": 101,
+      "nombre": "TestCoil2",
+      "tipoEvento": "TEST_EVENT_2",
+      "generarEvento": true,
+      "esAlarma": false
+    }
+  ]
+}
+
+### 8. Seed - Crear Configuraciones de Ejemplo
+POST {{baseUrl}}/api/PlcConfiguracion/seed
+Content-Type: application/json
+
+### 9. Crear Configuración Simulador Local
+POST {{baseUrl}}/api/PlcConfiguracion
+Content-Type: application/json
+
+{
+  "nombre": "PLC Simulador Local HTTP",
+  "ip": "{{simuladorIp}}",
+  "puerto": 502,
+  "unitId": 1,
+  "direccionInicial": 96,
+  "cantidadCoils": 4,
+  "intervaloMonitoreo": 1000,
+  "habilitarLoggingPeriodico": true,
+  "estacionId": 1,
+  "carrilId": 1,
+  "observaciones": "Simulador local - Dirs: 000097-000100 -> indices 96-99",
+  "coilsConfiguracion": [
+    {
+      "indice": 0,
+      "direccion": 96,
+      "nombre": "PresenciaVehiculo",
+      "tipoEvento": "VEHICULO_DETECTADO",
+      "generarEvento": true,
+      "esAlarma": false
+    },
+    {
+      "indice": 1,
+      "direccion": 97,
+      "nombre": "BarreraAbierta",
+      "tipoEvento": "BARRERA_ABIERTA",
+      "generarEvento": true,
+      "esAlarma": false
+    },
+    {
+      "indice": 2,
+      "direccion": 98,
+      "nombre": "SentidoCarrilAB",
+      "tipoEvento": "SENTIDO_AB",
+      "generarEvento": false,
+      "esAlarma": false
+    },
+    {
+      "indice": 3,
+      "direccion": 99,
+      "nombre": "ModoEmergencia",
+      "tipoEvento": "EMERGENCIA_ACTIVADA",
+      "generarEvento": true,
+      "esAlarma": true
+    }
+  ]
+}
+
+### 10. Obtener Configuración Específica (ID 1)
+GET {{baseUrl}}/api/PlcConfiguracion/1
+Accept: application/json
+
+### 11. Obtener Configuración Específica (ID 3 - Simulador)
+GET {{baseUrl}}/api/PlcConfiguracion/3
+Accept: application/json
+
+### 12. Actualizar Configuración (ID 3)
+PUT {{baseUrl}}/api/PlcConfiguracion/3
+Content-Type: application/json
+
+{
+  "nombre": "PLC Simulador Local Actualizado",
+  "ip": "{{simuladorIp}}",
+  "puerto": 502,
+  "unitId": 1,
+  "direccionInicial": 96,
+  "cantidadCoils": 4,
+  "intervaloMonitoreo": 500,
+  "habilitarLoggingPeriodico": true,
+  "estacionId": 1,
+  "carrilId": 1,
+  "observaciones": "Configuración actualizada desde archivo .http"
+}
+
+### 13. Eliminar Configuración (ID 3)
+DELETE {{baseUrl}}/api/PlcConfiguracion/3
+Accept: application/json
+
+### 14. Comando Cerrar Barrera (si existe endpoint)
+POST {{baseUrl}}/api/comandos/cerrar-barrera
+Content-Type: application/json
+
+{
+  "casetaIp": "{{simuladorIp}}",
+  "coilAddress": 97,
+  "unitId": 1,
+  "carrilId": 1,
+  "observaciones": "Comando cerrar barrera desde archivo .http"
+}
+
+### 15. Comando Activar Emergencia
+POST {{baseUrl}}/api/comandos/activar-emergencia
+Content-Type: application/json
+
+{
+  "casetaIp": "{{simuladorIp}}",
+  "coilAddress": 99,
+  "unitId": 1,
+  "carrilId": 1,
+  "observaciones": "Activar modo emergencia desde archivo .http"
+}
+
+### 16. Obtener Eventos de Tránsito
+GET {{baseUrl}}/api/MonitorEventos/eventos-transito
+Accept: application/json
+
+### 17. Obtener Transacciones
+GET {{baseUrl}}/api/Transacciones
+Accept: application/json
+
+### 18. Obtener Estaciones
+GET {{baseUrl}}/api/Estaciones
+Accept: application/json
+
+### 19. Obtener Carriles
+GET {{baseUrl}}/api/Carriles
+Accept: application/json
+
+### 20. Health Check (si existe)
+GET {{baseUrl}}/api/health
+Accept: application/json
+
+###############################################
+### MAPEO DE DIRECCIONES - REFERENCIA RÁPIDA
+###############################################
+
+### Mapeo Coil Address (Código .NET) -> Simulador PLC
+### 96 -> 000097 (Presencia de vehículo)
+### 97 -> 000098 (Barrera abierta)  
+### 98 -> 000099 (Sentido del carril)
+### 99 -> 000100 (Modo emergencia)
+
+### Configuración PLC Simulador Local:
+### IP: 127.0.0.1:502
+### Unit ID: 1
+### Direcciones: 96-99 (código) = 000097-000100 (simulador)
+### Función: Monitoreo de caseta de peaje
+
+###############################################
+### EJEMPLOS DE RESPUESTA ESPERADA
+###############################################
+
+### Respuesta exitosa comando abrir barrera:
+# {
+#   "exitoso": true,
+#   "mensaje": "✅ Barrera abierta correctamente",
+#   "fechaEjecucion": "2025-07-15T01:24:58.2047539Z",
+#   "datosAdicionales": {
+#     "TiempoRespuesta": "8ms",
+#     "CoilAddress": 96,
+#     "IP": "127.0.0.1"
+#   }
+# }
+
+### Respuesta estado workers:
+# {
+#   "1": "Desconectado",
+#   "2": "Desconectado", 
+#   "3": "Conectado"
+# }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using SistemaPeaje.Infrastructure.Data;
 using SistemaPeaje.Core.Interfaces;
+using SistemaPeaje.Application.Interfaces;
 using SistemaPeaje.Infrastructure.Repositories;
 using SistemaPeaje.Infrastructure.Services;
 

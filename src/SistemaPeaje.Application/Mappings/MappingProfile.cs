@@ -54,6 +54,20 @@ public class MappingProfile : Profile
         CreateMap<LiquidacionDiscrepancia, LiquidacionDiscrepanciaDto>()
             .ForMember(dest => dest.ResueltoPorEmpleadoNombre, opt => opt.MapFrom(src => 
                 src.ResueltoPorEmpleado != null ? $"{src.ResueltoPorEmpleado.Nombres} {src.ResueltoPorEmpleado.Apellidos}" : null));
+        
+        // TarjetaRFID mappings
+        CreateMap<TarjetaRFID, TarjetaRfidDto>()
+            .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src => 
+                src.Cliente != null ? $"{src.Cliente.Nombres} {src.Cliente.Apellidos}" : null))
+            .ForMember(dest => dest.ClienteEmail, opt => opt.MapFrom(src => src.Cliente != null ? src.Cliente.Email : null))
+            .ForMember(dest => dest.ClienteTelefono, opt => opt.MapFrom(src => src.Cliente != null ? src.Cliente.Telefono : null))
+            .ForMember(dest => dest.ClienteTipoDocumento, opt => opt.MapFrom(src => src.Cliente != null ? src.Cliente.TipoDocumento : null))
+            .ForMember(dest => dest.ClienteNumeroDocumento, opt => opt.MapFrom(src => src.Cliente != null ? src.Cliente.NumeroDocumento : null));
+        
+        CreateMap<CreateTarjetaRfidDto, TarjetaRFID>()
+            .ForMember(dest => dest.FechaEmision, opt => opt.MapFrom(src => DateTime.UtcNow))
+            .ForMember(dest => dest.Estado, opt => opt.MapFrom(src => "Activa"))
+            .ForMember(dest => dest.Saldo, opt => opt.MapFrom(src => src.SaldoInicial));
     }
 }
 

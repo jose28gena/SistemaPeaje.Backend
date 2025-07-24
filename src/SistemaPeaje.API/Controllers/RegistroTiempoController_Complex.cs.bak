@@ -1,0 +1,222 @@
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using SistemaPeaje.Application.Features.TurnosAdmin.RegistroTiempo;
+using SistemaPeaje.Application.DTOs.TurnosAdmin;
+
+namespace SistemaPeaje.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class RegistroTiempoController : ControllerBase
+{
+    private readonly IMediator _mediator;
+
+    public RegistroTiempoController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+
+    /// <summary>
+    /// Registra entrada de empleado
+    /// </summary>
+    [HttpPost("entrada")]
+    public async Task<ActionResult<RegistroTiempoDto>> RegistrarEntrada(RegistrarEntradaCommand command)
+    {
+        try
+        {
+            var registro = await _mediator.Send(command);
+            return Ok(registro);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Registra salida de empleado
+    /// </summary>
+    [HttpPost("salida")]
+    public async Task<ActionResult<RegistroTiempoDto>> RegistrarSalida(RegistrarSalidaCommand command)
+    {
+        try
+        {
+            var registro = await _mediator.Send(command);
+            return Ok(registro);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Registra inicio de descanso
+    /// </summary>
+    [HttpPost("inicio-descanso")]
+    public async Task<ActionResult<RegistroTiempoDto>> RegistrarInicioDescanso(RegistrarInicioDescansoCommand command)
+    {
+        try
+        {
+            var registro = await _mediator.Send(command);
+            return Ok(registro);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Registra fin de descanso
+    /// </summary>
+    [HttpPost("fin-descanso")]
+    public async Task<ActionResult<RegistroTiempoDto>> RegistrarFinDescanso(RegistrarFinDescansoCommand command)
+    {
+        try
+        {
+            var registro = await _mediator.Send(command);
+            return Ok(registro);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene registros de tiempo con filtros
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<List<RegistroTiempoDto>>> GetRegistrosTiempo(
+        [FromQuery] int? empleadoId = null,
+        [FromQuery] DateTime? fechaDesde = null,
+        [FromQuery] DateTime? fechaHasta = null,
+        [FromQuery] string? tipoRegistro = null,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetRegistrosTiempoQuery
+        {
+            EmpleadoId = empleadoId,
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            TipoRegistro = tipoRegistro,
+            EstacionId = estacionId
+        };
+        
+        var registros = await _mediator.Send(query);
+        return Ok(registros);
+    }
+
+    /// <summary>
+    /// Obtiene resumen de asistencia para un empleado
+    /// </summary>
+    [HttpGet("resumen-asistencia/{empleadoId}")]
+    public async Task<ActionResult<ResumenAsistenciaDto>> GetResumenAsistencia(
+        int empleadoId,
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta)
+    {
+        var query = new GetResumenAsistenciaQuery
+        {
+            EmpleadoId = empleadoId,
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta
+        };
+        
+        var resumen = await _mediator.Send(query);
+        return Ok(resumen);
+    }
+
+    /// <summary>
+    /// Corrige un registro de tiempo (requiere autorización)
+    /// </summary>
+    [HttpPut("{id}/corregir")]
+    public async Task<ActionResult<RegistroTiempoDto>> CorregirRegistroTiempo(int id, CorregirRegistroTiempoCommand command)
+    {
+        try
+        {
+            command.RegistroId = id;
+            var registro = await _mediator.Send(command);
+            return Ok(registro);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Autoriza un registro de tiempo que requiere aprobación
+    /// </summary>
+    [HttpPost("{id}/autorizar")]
+    public async Task<ActionResult<RegistroTiempoDto>> AutorizarRegistroTiempo(int id, [FromBody] AutorizarRegistroRequest request)
+    {
+        try
+        {
+            var command = new AutorizarRegistroTiempoCommand
+            {
+                RegistroId = id,
+                AutorizadoPorId = request.AutorizadoPorId,
+                Autorizado = request.Autorizado,
+                Observaciones = request.Observaciones
+            };
+            
+            var registro = await _mediator.Send(command);
+            return Ok(registro);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene el estado actual de un empleado (si está en turno, descanso, etc.)
+    /// </summary>
+    [HttpGet("estado-actual/{empleadoId}")]
+    public async Task<ActionResult<EstadoActualEmpleadoDto>> GetEstadoActualEmpleado(int empleadoId)
+    {
+        var query = new GetEstadoActualEmpleadoQuery { EmpleadoId = empleadoId };
+        var estado = await _mediator.Send(query);
+        return Ok(estado);
+    }
+
+    /// <summary>
+    /// Obtiene reportes de horas trabajadas
+    /// </summary>
+    [HttpGet("reporte-horas")]
+    public async Task<ActionResult<ReporteHorasTrabajadasDto>> GetReporteHorasTrabajadas(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? empleadoId = null,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetReporteHorasTrabajadasQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            EmpleadoId = empleadoId,
+            EstacionId = estacionId
+        };
+        
+        var reporte = await _mediator.Send(query);
+        return Ok(reporte);
+    }
+}
+
+// DTOs auxiliares
+public class AutorizarRegistroRequest
+{
+    public int AutorizadoPorId { get; set; }
+    public bool Autorizado { get; set; }
+    public string? Observaciones { get; set; }
+}

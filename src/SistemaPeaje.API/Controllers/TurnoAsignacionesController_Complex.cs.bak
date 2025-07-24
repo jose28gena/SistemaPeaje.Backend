@@ -1,0 +1,251 @@
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using SistemaPeaje.Application.Features.TurnosAdmin.TurnoAsignaciones;
+using SistemaPeaje.Application.DTOs.TurnosAdmin;
+
+namespace SistemaPeaje.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class TurnoAsignacionesController : ControllerBase
+{
+    private readonly IMediator _mediator;
+
+    public TurnoAsignacionesController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+
+    /// <summary>
+    /// Obtiene asignaciones de turnos con filtros
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<List<TurnoAsignacionDto>>> GetTurnoAsignaciones(
+        [FromQuery] int? empleadoId = null,
+        [FromQuery] int? estacionId = null,
+        [FromQuery] DateTime? fechaDesde = null,
+        [FromQuery] DateTime? fechaHasta = null,
+        [FromQuery] string? estado = null)
+    {
+        var query = new GetTurnoAsignacionesQuery
+        {
+            EmpleadoId = empleadoId,
+            EstacionId = estacionId,
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            Estado = estado
+        };
+        
+        var asignaciones = await _mediator.Send(query);
+        return Ok(asignaciones);
+    }
+
+    /// <summary>
+    /// Obtiene una asignación de turno por ID
+    /// </summary>
+    [HttpGet("{id}")]
+    public async Task<ActionResult<TurnoAsignacionDto>> GetTurnoAsignacion(int id)
+    {
+        var query = new GetTurnoAsignacionByIdQuery { Id = id };
+        var asignacion = await _mediator.Send(query);
+        
+        if (asignacion == null)
+            return NotFound($"Asignación de turno con ID {id} no encontrada");
+            
+        return Ok(asignacion);
+    }
+
+    /// <summary>
+    /// Crea una nueva asignación de turno
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult<TurnoAsignacionDto>> CreateTurnoAsignacion(CreateTurnoAsignacionCommand command)
+    {
+        try
+        {
+            var asignacion = await _mediator.Send(command);
+            return CreatedAtAction(nameof(GetTurnoAsignacion), new { id = asignacion.Id }, asignacion);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Crea múltiples asignaciones de turnos en lote
+    /// </summary>
+    [HttpPost("lote")]
+    public async Task<ActionResult<List<TurnoAsignacionDto>>> CreateTurnoAsignacionesLote(CreateTurnoAsignacionesLoteCommand command)
+    {
+        try
+        {
+            var asignaciones = await _mediator.Send(command);
+            return Ok(asignaciones);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Actualiza una asignación de turno
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<ActionResult<TurnoAsignacionDto>> UpdateTurnoAsignacion(int id, UpdateTurnoAsignacionCommand command)
+    {
+        try
+        {
+            command.Id = id;
+            var asignacion = await _mediator.Send(command);
+            return Ok(asignacion);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Confirma una asignación de turno por parte del empleado
+    /// </summary>
+    [HttpPost("{id}/confirmar")]
+    public async Task<ActionResult<TurnoAsignacionDto>> ConfirmarTurnoAsignacion(int id, [FromBody] ConfirmarAsignacionRequest request)
+    {
+        try
+        {
+            var command = new ConfirmarTurnoAsignacionCommand 
+            { 
+                AsignacionId = id,
+                EmpleadoId = request.EmpleadoId,
+                Confirmado = request.Confirmado,
+                MotivoRechazo = request.MotivoRechazo
+            };
+            
+            var asignacion = await _mediator.Send(command);
+            return Ok(asignacion);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Asigna un empleado sustituto a un turno
+    /// </summary>
+    [HttpPost("{id}/sustituir")]
+    public async Task<ActionResult<TurnoAsignacionDto>> AsignarSustituto(int id, [FromBody] AsignarSustitutoRequest request)
+    {
+        try
+        {
+            var command = new AsignarSustitutoCommand
+            {
+                AsignacionId = id,
+                EmpleadoSustitutoId = request.EmpleadoSustitutoId,
+                MotivoSustitucion = request.MotivoSustitucion
+            };
+            
+            var asignacion = await _mediator.Send(command);
+            return Ok(asignacion);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Cancela una asignación de turno
+    /// </summary>
+    [HttpPost("{id}/cancelar")]
+    public async Task<ActionResult<TurnoAsignacionDto>> CancelarTurnoAsignacion(int id, [FromBody] CancelarAsignacionRequest request)
+    {
+        try
+        {
+            var command = new CancelarTurnoAsignacionCommand
+            {
+                AsignacionId = id,
+                MotivoCancelacion = request.MotivoCancelacion
+            };
+            
+            var asignacion = await _mediator.Send(command);
+            return Ok(asignacion);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene el calendario de asignaciones para un mes específico
+    /// </summary>
+    [HttpGet("calendario")]
+    public async Task<ActionResult<CalendarioTurnosDto>> GetCalendarioTurnos(
+        [FromQuery] int año,
+        [FromQuery] int mes,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetCalendarioTurnosQuery
+        {
+            Año = año,
+            Mes = mes,
+            EstacionId = estacionId
+        };
+        
+        var calendario = await _mediator.Send(query);
+        return Ok(calendario);
+    }
+
+    /// <summary>
+    /// Obtiene asignaciones pendientes de confirmación
+    /// </summary>
+    [HttpGet("pendientes")]
+    public async Task<ActionResult<List<TurnoAsignacionDto>>> GetAsignacionesPendientes([FromQuery] int? empleadoId = null)
+    {
+        var query = new GetAsignacionesPendientesQuery { EmpleadoId = empleadoId };
+        var asignaciones = await _mediator.Send(query);
+        return Ok(asignaciones);
+    }
+}
+
+// DTOs auxiliares
+public class ConfirmarAsignacionRequest
+{
+    public int EmpleadoId { get; set; }
+    public bool Confirmado { get; set; }
+    public string? MotivoRechazo { get; set; }
+}
+
+public class AsignarSustitutoRequest
+{
+    public int EmpleadoSustitutoId { get; set; }
+    public string MotivoSustitucion { get; set; } = string.Empty;
+}
+
+public class CancelarAsignacionRequest
+{
+    public string MotivoCancelacion { get; set; } = string.Empty;
+}

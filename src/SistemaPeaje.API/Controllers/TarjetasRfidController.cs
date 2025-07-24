@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SistemaPeaje.Core.Entities;
 using SistemaPeaje.Core.Interfaces;
+using SistemaPeaje.Application.Interfaces;
+using SistemaPeaje.Application.DTOs;
 
 namespace SistemaPeaje.API.Controllers;
 
@@ -63,107 +65,108 @@ public class TarjetasRfidController : ControllerBase
     {
         try 
         {
-            var tarjeta = await _tarjetaRfidService.GetByNumeroTagAsync(numeroTag);
+            var tarjeta = await _tarjetaRfidService.ObtenerTarjetaPorTagAsync(numeroTag);
             
-            var tarjetaDto = new TarjetaRfidDto
+            if (tarjeta == null)
             {
-                Id = tarjeta.Id,
-                NumeroTag = tarjeta.NumeroTag,
-                ClienteId = tarjeta.ClienteId,
-                Saldo = tarjeta.Saldo,
-                Estado = tarjeta.Estado,
-                FechaEmision = tarjeta.FechaEmision,
-                FechaVencimiento = tarjeta.FechaVencimiento
-            };
+                return NotFound($"Tarjeta con tag {numeroTag} no encontrada");
+            }
 
-            return Ok(tarjetaDto);
+            return Ok(tarjeta);
         }
-        catch (KeyNotFoundException)
+        catch (Exception ex)
         {
-            return NotFound($"Tarjeta con tag {numeroTag} no encontrada");
+            return BadRequest($"Error al obtener tarjeta: {ex.Message}");
         }
     }
 
     [HttpPost]
     public async Task<ActionResult<TarjetaRfidDto>> CreateTarjeta(CreateTarjetaRequest request)
     {
-        var tarjeta = await _tarjetaRfidService.CrearTarjetaAsync(
-            request.NumeroTag,
-            request.ClienteId,
-            request.SaldoInicial);
+        try
+        {
+            var createDto = new CreateTarjetaRfidDto
+            {
+                NumeroTag = request.NumeroTag,
+                ClienteId = request.ClienteId,
+                SaldoInicial = request.SaldoInicial
+            };
+
+            var tarjeta = await _tarjetaRfidService.CrearTarjetaAsync(createDto);
             
-        if (tarjeta.Id == 0) // Verificamos si se trata de un objeto vacío (error)
-        {
-            return BadRequest("No se pudo crear la tarjeta. Verifique que el número de tag sea único y el cliente exista.");
+            return CreatedAtAction(nameof(GetTarjetaPorTag), new { numeroTag = tarjeta.NumeroTag }, tarjeta);
         }
-
-        var tarjetaDto = new TarjetaRfidDto
+        catch (Exception ex)
         {
-            Id = tarjeta.Id,
-            NumeroTag = tarjeta.NumeroTag,
-            ClienteId = tarjeta.ClienteId,
-            Saldo = tarjeta.Saldo,
-            Estado = tarjeta.Estado,
-            FechaEmision = tarjeta.FechaEmision,
-            FechaVencimiento = tarjeta.FechaVencimiento
-        };
-
-        return CreatedAtAction(nameof(GetTarjeta), new { id = tarjeta.Id }, tarjetaDto);
+            return BadRequest($"Error al crear tarjeta: {ex.Message}");
+        }
     }
 
     [HttpPost("{id}/recargar")]
     public async Task<IActionResult> RecargarTarjeta(int id, RecargaTarjetaRequest request)
     {
-        // Primero obtenemos el número de tag a partir del ID
-        var tarjeta = await _unitOfWork.Repository<TarjetaRFID>().GetByIdAsync(id);
-        if (tarjeta == null)
-            return NotFound();
-            
-        string numeroTag = tarjeta.NumeroTag;
+        try
+        {
+            var recargaDto = new RecargaTarjetaDto
+            {
+                Monto = request.Monto,
+                MetodoPago = "Efectivo", // O mapear desde request si está disponible
+                Observaciones = $"Recarga de ${request.Monto}",
+                EmpleadoId = 1 // Esto debería venir del usuario autenticado
+            };
 
-        // Ahora usamos el servicio para recargar
-        bool resultado = await _tarjetaRfidService.RecargarSaldoAsync(numeroTag, request.Monto);
-        if (!resultado)
-            return BadRequest("No se pudo realizar la recarga. La tarjeta puede estar bloqueada o no existir.");
-        
-        // Consultamos el nuevo saldo
-        decimal nuevoSaldo = await _tarjetaRfidService.ConsultarSaldoAsync(numeroTag);
-        
-        return Ok(new { NuevoSaldo = nuevoSaldo });
+            var tarjeta = await _tarjetaRfidService.RecargarTarjetaAsync(id, recargaDto);
+            
+            return Ok(new { 
+                NuevoSaldo = tarjeta.Saldo,
+                Mensaje = "Recarga realizada exitosamente"
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error al recargar tarjeta: {ex.Message}");
+        }
     }
 
     [HttpPost("{id}/bloquear")]
     public async Task<IActionResult> BloquearTarjeta(int id)
     {
-        // Primero obtenemos el número de tag a partir del ID
-        var tarjeta = await _unitOfWork.Repository<TarjetaRFID>().GetByIdAsync(id);
-        if (tarjeta == null)
-            return NotFound();
+        try
+        {
+            int empleadoId = 1; // Esto debería venir del usuario autenticado
+            string motivo = "Bloqueado desde administración";
             
-        string numeroTag = tarjeta.NumeroTag;
-
-        bool resultado = await _tarjetaRfidService.BloquearTarjetaAsync(numeroTag);
-        if (!resultado)
-            return BadRequest("No se pudo bloquear la tarjeta");
-
-        return Ok(new { Estado = "Bloqueada" });
+            var tarjeta = await _tarjetaRfidService.BloquearTarjetaAsync(id, empleadoId, motivo);
+            
+            return Ok(new { 
+                Estado = tarjeta.Estado,
+                Mensaje = "Tarjeta bloqueada exitosamente" 
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error al bloquear tarjeta: {ex.Message}");
+        }
     }
 
     [HttpPost("{id}/activar")]
     public async Task<IActionResult> ActivarTarjeta(int id)
     {
-        // Primero obtenemos el número de tag a partir del ID
-        var tarjeta = await _unitOfWork.Repository<TarjetaRFID>().GetByIdAsync(id);
-        if (tarjeta == null)
-            return NotFound();
+        try
+        {
+            int empleadoId = 1; // Esto debería venir del usuario autenticado
             
-        string numeroTag = tarjeta.NumeroTag;
-
-        bool resultado = await _tarjetaRfidService.DesbloquearTarjetaAsync(numeroTag);
-        if (!resultado)
-            return BadRequest("No se pudo activar la tarjeta");
-
-        return Ok(new { Estado = "Activa" });
+            var tarjeta = await _tarjetaRfidService.ActivarTarjetaAsync(id, empleadoId);
+            
+            return Ok(new { 
+                Estado = tarjeta.Estado,
+                Mensaje = "Tarjeta activada exitosamente" 
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error al activar tarjeta: {ex.Message}");
+        }
     }
     
     // Nuevos endpoints que utilizan los servicios de tarjeta RFID
@@ -171,23 +174,19 @@ public class TarjetasRfidController : ControllerBase
     [HttpGet("cliente/{clienteId}")]
     public async Task<ActionResult<IEnumerable<TarjetaRfidDto>>> GetTarjetasByCliente(int clienteId)
     {
-        var tarjetas = await _tarjetaRfidService.GetTarjetasByClienteIdAsync(clienteId);
-        
-        if (!tarjetas.Any())
-            return NotFound($"No se encontraron tarjetas para el cliente con ID {clienteId}");
-            
-        var tarjetasDto = tarjetas.Select(t => new TarjetaRfidDto
+        try
         {
-            Id = t.Id,
-            NumeroTag = t.NumeroTag,
-            ClienteId = t.ClienteId,
-            Saldo = t.Saldo,
-            Estado = t.Estado,
-            FechaEmision = t.FechaEmision,
-            FechaVencimiento = t.FechaVencimiento
-        });
-        
-        return Ok(tarjetasDto);
+            var tarjetas = await _tarjetaRfidService.ObtenerTarjetasPorClienteAsync(clienteId);
+            
+            if (!tarjetas.Any())
+                return NotFound($"No se encontraron tarjetas para el cliente con ID {clienteId}");
+                
+            return Ok(tarjetas);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error al obtener tarjetas: {ex.Message}");
+        }
     }
     
     [HttpGet("tag/{numeroTag}/saldo")]
@@ -195,34 +194,51 @@ public class TarjetasRfidController : ControllerBase
     {
         try
         {
-            var saldo = await _tarjetaRfidService.ConsultarSaldoAsync(numeroTag);
+            var saldo = await _tarjetaRfidService.ObtenerSaldoAsync(numeroTag);
             return Ok(new { Saldo = saldo });
         }
         catch (Exception ex)
         {
-            return NotFound($"Error al consultar saldo: {ex.Message}");
+            return BadRequest($"Error al consultar saldo: {ex.Message}");
         }
     }
     
     [HttpPost("tag/{numeroTag}/validar-saldo")]
     public async Task<ActionResult> ValidarSaldo(string numeroTag, [FromBody] ValidarSaldoRequest request)
     {
-        var resultado = await _tarjetaRfidService.ValidarSaldoSuficienteAsync(numeroTag, request.Monto);
-        return Ok(new { SaldoSuficiente = resultado });
+        try
+        {
+            var resultado = await _tarjetaRfidService.ValidarSaldoSuficienteAsync(numeroTag, request.Monto);
+            return Ok(new { SaldoSuficiente = resultado });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error al validar saldo: {ex.Message}");
+        }
     }
     
     [HttpPost("tag/{numeroTag}/debitar")]
     public async Task<ActionResult> DebitarSaldo(string numeroTag, [FromBody] DebitarSaldoRequest request)
     {
-        var resultado = await _tarjetaRfidService.DebitarSaldoAsync(numeroTag, request.Monto);
-        
-        if (!resultado)
-            return BadRequest("No se pudo debitar el saldo. Verifique que la tarjeta esté activa y tenga saldo suficiente.");
+        try
+        {
+            // Generar un ID de transacción temporal
+            int transaccionId = DateTime.Now.Millisecond; // Esto debería venir de la transacción real
             
-        // Consultamos el nuevo saldo
-        decimal nuevoSaldo = await _tarjetaRfidService.ConsultarSaldoAsync(numeroTag);
-        
-        return Ok(new { Resultado = resultado, NuevoSaldo = nuevoSaldo });
+            var resultado = await _tarjetaRfidService.DebitarSaldoAsync(numeroTag, request.Monto, transaccionId);
+            
+            if (!resultado)
+                return BadRequest("No se pudo debitar el saldo. Verifique que la tarjeta esté activa y tenga saldo suficiente.");
+                
+            // Consultamos el nuevo saldo
+            decimal nuevoSaldo = await _tarjetaRfidService.ObtenerSaldoAsync(numeroTag);
+            
+            return Ok(new { Resultado = resultado, NuevoSaldo = nuevoSaldo });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error al debitar saldo: {ex.Message}");
+        }
     }
 }
 

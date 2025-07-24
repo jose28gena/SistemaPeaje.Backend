@@ -1,0 +1,527 @@
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using SistemaPeaje.Application.Features.Turnos;
+using SistemaPeaje.Application.Features.TurnosAdmin.TurnoAsignaciones;
+using SistemaPeaje.Application.Features.TurnosAdmin.RegistroTiempo;
+using SistemaPeaje.Application.Features.TurnosAdmin.TurnoEventos;
+using SistemaPeaje.Application.Features.TurnosAdmin.TurnoTemplates;
+using SistemaPeaje.Application.Mappings;
+using SistemaPeaje.Application.DTOs.TurnosAdmin;
+
+namespace SistemaPeaje.API.Controllers;
+
+[ApiController]
+[Route("api/turnos-admin")]
+public class TurnosAdminController : ControllerBase
+{
+    private readonly IMediator _mediator;
+
+    public TurnosAdminController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+
+    /// <summary>
+    /// Obtiene dashboard principal del módulo de administración de turnos
+    /// </summary>
+    [HttpGet("dashboard")]
+    public async Task<ActionResult<DashboardTurnosDto>> GetDashboard([FromQuery] int? estacionId = null)
+    {
+        var query = new GetDashboardTurnosQuery { EstacionId = estacionId };
+        var dashboard = await _mediator.Send(query);
+        return Ok(dashboard);
+    }
+
+    /// <summary>
+    /// Obtiene estadísticas de rendimiento de turnos
+    /// </summary>
+    [HttpGet("estadisticas")]
+    public async Task<ActionResult<EstadisticasTurnosDto>> GetEstadisticasTurnos(
+        [FromQuery] DateTime? fechaDesde = null,
+        [FromQuery] DateTime? fechaHasta = null,
+        [FromQuery] int? estacionId = null,
+        [FromQuery] int? empleadoId = null)
+    {
+        var query = new GetEstadisticasTurnosQuery
+        {
+            FechaDesde = fechaDesde ?? DateTime.Today.AddDays(-30),
+            FechaHasta = fechaHasta ?? DateTime.Today,
+            EstacionId = estacionId,
+            EmpleadoId = empleadoId
+        };
+        
+        var estadisticas = await _mediator.Send(query);
+        return Ok(estadisticas);
+    }
+
+    /// <summary>
+    /// Obtiene turnos con problemas (retrasos, ausencias, eventos críticos)
+    /// </summary>
+    [HttpGet("con-problemas")]
+    public async Task<ActionResult<List<TurnoConProblemasDto>>> GetTurnosConProblemas(
+        [FromQuery] DateTime? fechaDesde = null,
+        [FromQuery] DateTime? fechaHasta = null)
+    {
+        var query = new GetTurnosConProblemasQuery
+        {
+            FechaDesde = fechaDesde ?? DateTime.Today,
+            FechaHasta = fechaHasta ?? DateTime.Today.AddDays(1)
+        };
+        
+        var turnos = await _mediator.Send(query);
+        return Ok(turnos);
+    }
+
+    /// <summary>
+    /// Obtiene el estado actual de todos los turnos activos
+    /// </summary>
+    [HttpGet("estado-actual")]
+    public async Task<ActionResult<EstadoActualTurnosDto>> GetEstadoActualTurnos([FromQuery] int? estacionId = null)
+    {
+        var query = new GetEstadoActualTurnosQuery { EstacionId = estacionId };
+        var estado = await _mediator.Send(query);
+        return Ok(estado);
+    }
+
+    /// <summary>
+    /// Pausa un turno temporalmente
+    /// </summary>
+    [HttpPost("turnos/{id}/pausar")]
+    public async Task<ActionResult<TurnoDto>> PausarTurno(int id, [FromBody] PausarTurnoRequest request)
+    {
+        try
+        {
+            var command = new PausarTurnoCommand
+            {
+                TurnoId = id,
+                MotivoPausa = request.MotivoPausa
+            };
+
+            var turno = await _mediator.Send(command);
+            
+            // Registrar inicio de descanso si es apropiado
+            if (request.EsDescanso)
+            {
+                var registroDescanso = new RegistrarInicioDescansoCommand
+                {
+                    EmpleadoId = turno.EmpleadoId,
+                    TurnoId = turno.Id,
+                    Observaciones = request.MotivoPausa
+                };
+                
+                await _mediator.Send(registroDescanso);
+            }
+            
+            return Ok(turno);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Reanuda un turno pausado
+    /// </summary>
+    [HttpPost("turnos/{id}/reanudar")]
+    public async Task<ActionResult<TurnoDto>> ReanudarTurno(int id)
+    {
+        try
+        {
+            var command = new ReanudarTurnoCommand { TurnoId = id };
+            var turno = await _mediator.Send(command);
+            
+            // Registrar fin de descanso
+            var registroFinDescanso = new RegistrarFinDescansoCommand
+            {
+                EmpleadoId = turno.EmpleadoId,
+                TurnoId = turno.Id,
+                Observaciones = "Fin de pausa/descanso"
+            };
+            
+            await _mediator.Send(registroFinDescanso);
+            
+            return Ok(turno);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Transfiere un turno de un empleado a otro
+    /// </summary>
+    [HttpPost("turnos/{id}/transferir")]
+    public async Task<ActionResult<TurnoDto>> TransferirTurno(int id, [FromBody] TransferirTurnoRequest request)
+    {
+        try
+        {
+            var command = new TransferirTurnoCommand
+            {
+                TurnoId = id,
+                NuevoEmpleadoId = request.NuevoEmpleadoId,
+                MotivoTransferencia = request.MotivoTransferencia,
+                AutorizadoPorId = request.AutorizadoPorId
+            };
+
+            var turno = await _mediator.Send(command);
+            return Ok(turno);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene el resumen detallado de un turno (transacciones, totales, eventos, etc.)
+    /// </summary>
+    [HttpGet("turnos/{id}/resumen-detallado")]
+    public async Task<ActionResult<ResumenTurnoDetalladoDto>> GetResumenTurnoDetallado(int id)
+    {
+        try
+        {
+            var query = new GetResumenTurnoDetalladoQuery { TurnoId = id };
+            var resumen = await _mediator.Send(query);
+            return Ok(resumen);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene métricas de productividad por empleado
+    /// </summary>
+    [HttpGet("metricas-productividad")]
+    public async Task<ActionResult<MetricasProductividadDto>> GetMetricasProductividad(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? empleadoId = null,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetMetricasProductividadQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            EmpleadoId = empleadoId,
+            EstacionId = estacionId
+        };
+        
+        var metricas = await _mediator.Send(query);
+        return Ok(metricas);
+    }
+
+    /// <summary>
+    /// Obtiene alertas del sistema de turnos
+    /// </summary>
+    [HttpGet("alertas")]
+    public async Task<ActionResult<List<AlertaTurnosDto>>> GetAlertasTurnos([FromQuery] string? tipo = null)
+    {
+        var query = new GetAlertasTurnosQuery { TipoAlerta = tipo };
+        var alertas = await _mediator.Send(query);
+        return Ok(alertas);
+    }
+
+    /// <summary>
+    /// Marca una alerta como leída/resuelta
+    /// </summary>
+    [HttpPost("alertas/{id}/resolver")]
+    public async Task<ActionResult> ResolverAlerta(int id, [FromBody] ResolverAlertaRequest request)
+    {
+        try
+        {
+            var command = new ResolverAlertaCommand 
+            { 
+                AlertaId = id, 
+                ResueltoPorId = request.ResueltoPorId,
+                Observaciones = request.Observaciones
+            };
+            await _mediator.Send(command);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene configuración del módulo de turnos
+    /// </summary>
+    [HttpGet("configuracion")]
+    public async Task<ActionResult<ConfiguracionTurnosDto>> GetConfiguracionTurnos()
+    {
+        var query = new GetConfiguracionTurnosQuery();
+        var configuracion = await _mediator.Send(query);
+        return Ok(configuracion);
+    }
+
+    /// <summary>
+    /// Actualiza configuración del módulo de turnos
+    /// </summary>
+    [HttpPut("configuracion")]
+    public async Task<ActionResult<ConfiguracionTurnosDto>> UpdateConfiguracionTurnos(UpdateConfiguracionTurnosCommand command)
+    {
+        try
+        {
+            var configuracion = await _mediator.Send(command);
+            return Ok(configuracion);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Ejecuta optimizaciones automáticas de turnos
+    /// </summary>
+    [HttpPost("optimizar")]
+    public async Task<ActionResult<OptimizacionResultadoDto>> OptimizarTurnos([FromBody] OptimizarTurnosRequest request)
+    {
+        try
+        {
+            var command = new OptimizarTurnosCommand
+            {
+                FechaDesde = request.FechaDesde,
+                FechaHasta = request.FechaHasta,
+                EstacionId = request.EstacionId,
+                TipoOptimizacion = request.TipoOptimizacion
+            };
+            
+            var resultado = await _mediator.Send(command);
+            return Ok(resultado);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+}
+
+// DTOs auxiliares para TurnosAdminController
+public class PausarTurnoRequest
+{
+    public string MotivoPausa { get; set; } = string.Empty;
+    public bool EsDescanso { get; set; } = true;
+}
+
+public class TransferirTurnoRequest
+{
+    public int NuevoEmpleadoId { get; set; }
+    public string MotivoTransferencia { get; set; } = string.Empty;
+    public int AutorizadoPorId { get; set; }
+}
+
+public class ResolverAlertaRequest
+{
+    public int ResueltoPorId { get; set; }
+    public string? Observaciones { get; set; }
+}
+
+public class OptimizarTurnosRequest
+{
+    public DateTime FechaDesde { get; set; }
+    public DateTime FechaHasta { get; set; }
+    public int? EstacionId { get; set; }
+    public string TipoOptimizacion { get; set; } = "Cobertura"; // "Cobertura", "Costos", "Productividad"
+}
+
+public class DashboardTurnosDto
+{
+    public DateTime FechaActualizacion { get; set; }
+    public int TurnosActivosHoy { get; set; }
+    public int EmpleadosEnTurno { get; set; }
+    public int TurnosProgramadosHoy { get; set; }
+    public int AlertasActivas { get; set; }
+    public List<TurnoActivoDto> TurnosEnCurso { get; set; } = new();
+    public List<AlertaTurnosDto> AlertasRecientes { get; set; } = new();
+    public EstadisticasDiaDto EstadisticasDelDia { get; set; } = new();
+    public List<EstacionEstadoDto> EstadoPorEstacion { get; set; } = new();
+}
+
+public class EstadisticasDiaDto
+{
+    public decimal RecaudacionAcumulada { get; set; }
+    public int TransaccionesProcesadas { get; set; }
+    public TimeSpan HorasTrabajadasTotal { get; set; }
+    public int EventosRegistrados { get; set; }
+    public decimal RendimientoPromedio { get; set; }
+}
+
+public class EstacionEstadoDto
+{
+    public int EstacionId { get; set; }
+    public string EstacionNombre { get; set; } = string.Empty;
+    public string Estado { get; set; } = string.Empty; // "Operativa", "Pausada", "MantenimientoProgramado", "ProblemasTecnicos"
+    public int TurnosActivos { get; set; }
+    public List<TurnoActivoDto> TurnosEnCurso { get; set; } = new();
+}
+
+public class TurnoActivoDto
+{
+    public TurnoDto Turno { get; set; } = new();
+    public string EstadoDetallado { get; set; } = string.Empty;
+    public TimeSpan TiempoTranscurrido { get; set; }
+    public DateTime? UltimoRegistroTiempo { get; set; }
+    public bool TieneEventosAbiertos { get; set; }
+    public int NumeroEventosAbiertos { get; set; }
+}
+
+public class AlertaTurnosDto
+{
+    public int Id { get; set; }
+    public string TipoAlerta { get; set; } = string.Empty;
+    public string Titulo { get; set; } = string.Empty;
+    public string Descripcion { get; set; } = string.Empty;
+    public string Severidad { get; set; } = string.Empty;
+    public DateTime FechaCreacion { get; set; }
+    public bool EsResuelta { get; set; }
+    public int? EmpleadoAfectadoId { get; set; }
+    public string? EmpleadoAfectadoNombre { get; set; }
+    public int? EstacionAfectadaId { get; set; }
+    public string? EstacionAfectadaNombre { get; set; }
+}
+
+public class EstadisticasTurnosDto
+{
+    public DateTime FechaDesde { get; set; }
+    public DateTime FechaHasta { get; set; }
+    public int TotalTurnos { get; set; }
+    public int TurnosCompletados { get; set; }
+    public decimal PorcentajeCompletados { get; set; }
+    public TimeSpan PromedioHorasTrabajadas { get; set; }
+    public decimal PromedioRecaudacionPorTurno { get; set; }
+    public int TotalEventos { get; set; }
+    public int EventosCriticos { get; set; }
+    public Dictionary<string, int> EventosPorTipo { get; set; } = new();
+    public List<EstadisticaEmpleadoDto> EstadisticasPorEmpleado { get; set; } = new();
+    public List<EstadisticaEstacionDto> EstadisticasPorEstacion { get; set; } = new();
+}
+
+public class EstadisticaEmpleadoDto
+{
+    public int EmpleadoId { get; set; }
+    public string EmpleadoNombre { get; set; } = string.Empty;
+    public int TotalTurnos { get; set; }
+    public TimeSpan TotalHorasTrabajadas { get; set; }
+    public decimal TotalRecaudado { get; set; }
+    public decimal PromedioRecaudacionPorTurno { get; set; }
+    public int TotalEventos { get; set; }
+    public decimal PorcentajePuntualidad { get; set; }
+}
+
+public class EstadisticaEstacionDto
+{
+    public int EstacionId { get; set; }
+    public string EstacionNombre { get; set; } = string.Empty;
+    public int TotalTurnos { get; set; }
+    public decimal TotalRecaudado { get; set; }
+    public int TotalTransacciones { get; set; }
+    public decimal PromedioRecaudacionPorTurno { get; set; }
+    public int TotalEventos { get; set; }
+    public decimal PorcentajeOperatividad { get; set; }
+}
+
+public class TurnoConProblemasDto
+{
+    public TurnoDto Turno { get; set; } = new();
+    public List<string> Problemas { get; set; } = new();
+    public string TipoProblema { get; set; } = string.Empty;
+    public string Descripcion { get; set; } = string.Empty;
+    public string Severidad { get; set; } = string.Empty;
+    public bool RequiereAtencion { get; set; }
+    public DateTime? FechaDeteccion { get; set; }
+}
+
+public class EstadoActualTurnosDto
+{
+    public DateTime FechaConsulta { get; set; }
+    public int TotalTurnosActivos { get; set; }
+    public int TurnosEnCurso { get; set; }
+    public int TurnosPausados { get; set; }
+    public int TurnosConProblemas { get; set; }
+    public List<TurnoActivoDto> TurnosActivos { get; set; } = new();
+    public List<TurnoConProblemasDto> ProblemasDetectados { get; set; } = new();
+}
+
+public class ResumenTurnoDetalladoDto
+{
+    public TurnoDto Turno { get; set; } = new();
+    public int TotalTransacciones { get; set; }
+    public decimal MontoTotalRecaudado { get; set; }
+    public Dictionary<string, int> TransaccionesPorTipoPago { get; set; } = new();
+    public Dictionary<string, decimal> MontosPorTipoPago { get; set; } = new();
+    public List<RegistroTiempoDto> RegistrosTiempo { get; set; } = new();
+    public List<TurnoEventoDto> Eventos { get; set; } = new();
+    public TimeSpan? TiempoTotalTrabajado { get; set; }
+    public TimeSpan? TiempoEnDescanso { get; set; }
+    public bool TuvoEventosCriticos { get; set; }
+    public decimal RendimientoPorHora { get; set; }
+    public decimal PromedioTransaccionesPorHora { get; set; }
+}
+
+public class MetricasProductividadDto
+{
+    public DateTime FechaDesde { get; set; }
+    public DateTime FechaHasta { get; set; }
+    public List<ProductividadEmpleadoDto> ProductividadPorEmpleado { get; set; } = new();
+    public decimal RendimientoPromedioGeneral { get; set; }
+    public TimeSpan PromedioHorasTrabajadas { get; set; }
+    public int RankingMejorEmpleado { get; set; }
+    public string NombreMejorEmpleado { get; set; } = string.Empty;
+}
+
+public class ProductividadEmpleadoDto
+{
+    public int EmpleadoId { get; set; }
+    public string EmpleadoNombre { get; set; } = string.Empty;
+    public decimal RendimientoPorHora { get; set; }
+    public int TotalTransacciones { get; set; }
+    public decimal TotalRecaudado { get; set; }
+    public TimeSpan TotalHorasTrabajadas { get; set; }
+    public int Ranking { get; set; }
+    public decimal PorcentajeEficiencia { get; set; }
+}
+
+public class ConfiguracionTurnosDto
+{
+    public int HorasMaximasTurnoContinuo { get; set; }
+    public int MinutosDescansoObligatorio { get; set; }
+    public decimal FactorHoraExtraDefecto { get; set; }
+    public bool PermitirTurnosSuperpuestos { get; set; }
+    public bool ValidarPuntualidadAutomatica { get; set; }
+    public int MinutosToleranciaRetraso { get; set; }
+    public bool NotificacionesAutomaticas { get; set; }
+    public string[] TiposEventoPrioritarios { get; set; } = Array.Empty<string>();
+}
+
+public class OptimizacionResultadoDto
+{
+    public string TipoOptimizacion { get; set; } = string.Empty;
+    public bool FueExitosa { get; set; }
+    public string Descripcion { get; set; } = string.Empty;
+    public List<string> CambiosRealizados { get; set; } = new();
+    public List<string> RecomendacionesAdicionales { get; set; } = new();
+    public decimal AhorroEstimado { get; set; }
+    public decimal MejoraEficienciaEstimada { get; set; }
+}

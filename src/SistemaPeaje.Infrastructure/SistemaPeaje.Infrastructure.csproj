@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SistemaPeaje.Core\SistemaPeaje.Core.csproj" />
+    <ProjectReference Include="..\SistemaPeaje.Application\SistemaPeaje.Application.csproj" />
   </ItemGroup>
 
 </Project>

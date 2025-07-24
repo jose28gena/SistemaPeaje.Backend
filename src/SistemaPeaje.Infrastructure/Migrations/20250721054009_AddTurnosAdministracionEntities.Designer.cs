@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SistemaPeaje.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using SistemaPeaje.Infrastructure.Data;
 namespace SistemaPeaje.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250721054009_AddTurnosAdministracionEntities")]
+    partial class AddTurnosAdministracionEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -750,94 +753,6 @@ namespace SistemaPeaje.Infrastructure.Migrations
                     b.ToTable("PlcConfiguraciones");
                 });
 
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.RegistroTiempo", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ArchivoAdjunto")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("AutorizadoPorId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("DireccionIP")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("EmpleadoId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("EsAtraso")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("EsHoraExtra")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("EsValido")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("EstacionId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("FechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaAutorizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaHora")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("MetodoRegistro")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("MinutosAtraso")
-                        .HasColumnType("int");
-
-                    b.Property<string>("MotivoInvalidacion")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Observaciones")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TipoRegistro")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("TurnoAsignacionId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TurnoId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UbicacionGPS")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AutorizadoPorId");
-
-                    b.HasIndex("EmpleadoId");
-
-                    b.HasIndex("EstacionId");
-
-                    b.HasIndex("TurnoAsignacionId");
-
-                    b.HasIndex("TurnoId");
-
-                    b.ToTable("RegistrosTiempo");
-                });
-
             modelBuilder.Entity("SistemaPeaje.Core.Entities.Tarifa", b =>
                 {
                     b.Property<int>("Id")
@@ -1180,348 +1095,19 @@ namespace SistemaPeaje.Infrastructure.Migrations
                     b.Property<DateTime>("FechaInicio")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("FinDescanso")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("HoraFinReal")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("HoraInicioReal")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("InicioDescanso")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MinutosDescanso")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MinutosHorasExtras")
-                        .HasColumnType("int");
-
                     b.Property<decimal?>("MontoFinalCaja")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("MontoHorasExtras")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("MontoInicialCaja")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("MotivoCierre")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NotasAdministrativas")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Observaciones")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("TieneHorasExtras")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("TotalRecaudado")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("TotalTransacciones")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalVehiculos")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TurnoAsignacionId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("EmpleadoId");
 
                     b.HasIndex("EstacionId");
-
-                    b.HasIndex("TurnoAsignacionId")
-                        .IsUnique()
-                        .HasFilter("[TurnoAsignacionId] IS NOT NULL");
 
                     b.ToTable("Turnos");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.TurnoAsignacion", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("ConfirmadoPorEmpleado")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("EmpleadoId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("EmpleadoSustitutoId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EstacionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Estado")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("FechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaConfirmacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaSustitucion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaTurno")
-                        .HasColumnType("datetime2");
-
-                    b.Property<TimeSpan>("HoraFinPrograma")
-                        .HasColumnType("time");
-
-                    b.Property<TimeSpan>("HoraInicioPrograma")
-                        .HasColumnType("time");
-
-                    b.Property<string>("InstruccionesEspeciales")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("MontoInicialCajaAsignado")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("MotivoRechazo")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MotivoSustitucion")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Notas")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Observaciones")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("RequiereSupervisor")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("TurnoTemplateId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmpleadoId");
-
-                    b.HasIndex("EmpleadoSustitutoId");
-
-                    b.HasIndex("EstacionId");
-
-                    b.HasIndex("TurnoTemplateId");
-
-                    b.ToTable("TurnoAsignaciones");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.TurnoEvento", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AccionesTomadas")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AfectaOperacion")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ArchivosAdjuntos")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("AsignadoAId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Descripcion")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("DuracionMinutos")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EmpleadoId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("EstacionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Estado")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("FechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaHoraEvento")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaResolucion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ImpactoOperacional")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MedidasPreventivas")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("MontoAfectado")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("PersonasNotificadas")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Prioridad")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("ReportadoPorId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("RequiereNotificacion")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("ResueltoPorId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SolucionAplicada")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TipoEvento")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Titulo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("TurnoAsignacionId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TurnoId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AsignadoAId");
-
-                    b.HasIndex("EmpleadoId");
-
-                    b.HasIndex("EstacionId");
-
-                    b.HasIndex("ReportadoPorId");
-
-                    b.HasIndex("ResueltoPorId");
-
-                    b.HasIndex("TurnoAsignacionId");
-
-                    b.HasIndex("TurnoId");
-
-                    b.ToTable("TurnoEventos");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.TurnoTemplate", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Descripcion")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("Domingo")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("DuracionMinutos")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("EsActivo")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("FactorHoraExtra")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("FechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<TimeSpan?>("HoraDescansoInicio")
-                        .HasColumnType("time");
-
-                    b.Property<TimeSpan>("HoraFin")
-                        .HasColumnType("time");
-
-                    b.Property<TimeSpan>("HoraInicio")
-                        .HasColumnType("time");
-
-                    b.Property<bool>("Jueves")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Lunes")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Martes")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MaximoHorasExtras")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Miercoles")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MinutosDescanso")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("PermiteHorasExtras")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Sabado")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Tipo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("Viernes")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TurnoTemplates");
                 });
 
             modelBuilder.Entity("SistemaPeaje.Core.Entities.Usuario", b =>
@@ -1800,45 +1386,6 @@ namespace SistemaPeaje.Infrastructure.Migrations
                     b.Navigation("Estacion");
                 });
 
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.RegistroTiempo", b =>
-                {
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "AutorizadoPor")
-                        .WithMany()
-                        .HasForeignKey("AutorizadoPorId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "Empleado")
-                        .WithMany()
-                        .HasForeignKey("EmpleadoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Estacion", "Estacion")
-                        .WithMany()
-                        .HasForeignKey("EstacionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.TurnoAsignacion", "TurnoAsignacion")
-                        .WithMany("RegistrosTiempo")
-                        .HasForeignKey("TurnoAsignacionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Turno", "Turno")
-                        .WithMany("RegistrosTiempo")
-                        .HasForeignKey("TurnoId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("AutorizadoPor");
-
-                    b.Navigation("Empleado");
-
-                    b.Navigation("Estacion");
-
-                    b.Navigation("Turno");
-
-                    b.Navigation("TurnoAsignacion");
-                });
-
             modelBuilder.Entity("SistemaPeaje.Core.Entities.Tarifa", b =>
                 {
                     b.HasOne("SistemaPeaje.Core.Entities.Estacion", "Estacion")
@@ -1931,102 +1478,9 @@ namespace SistemaPeaje.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SistemaPeaje.Core.Entities.TurnoAsignacion", "TurnoAsignacion")
-                        .WithOne("TurnoEjecutado")
-                        .HasForeignKey("SistemaPeaje.Core.Entities.Turno", "TurnoAsignacionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("Empleado");
 
                     b.Navigation("Estacion");
-
-                    b.Navigation("TurnoAsignacion");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.TurnoAsignacion", b =>
-                {
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "Empleado")
-                        .WithMany()
-                        .HasForeignKey("EmpleadoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "EmpleadoSustituto")
-                        .WithMany()
-                        .HasForeignKey("EmpleadoSustitutoId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Estacion", "Estacion")
-                        .WithMany()
-                        .HasForeignKey("EstacionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SistemaPeaje.Core.Entities.TurnoTemplate", "TurnoTemplate")
-                        .WithMany("TurnoAsignaciones")
-                        .HasForeignKey("TurnoTemplateId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Empleado");
-
-                    b.Navigation("EmpleadoSustituto");
-
-                    b.Navigation("Estacion");
-
-                    b.Navigation("TurnoTemplate");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.TurnoEvento", b =>
-                {
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "AsignadoA")
-                        .WithMany()
-                        .HasForeignKey("AsignadoAId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "Empleado")
-                        .WithMany()
-                        .HasForeignKey("EmpleadoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Estacion", "Estacion")
-                        .WithMany()
-                        .HasForeignKey("EstacionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "ReportadoPor")
-                        .WithMany()
-                        .HasForeignKey("ReportadoPorId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Empleado", "ResueltoPor")
-                        .WithMany()
-                        .HasForeignKey("ResueltoPorId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.TurnoAsignacion", "TurnoAsignacion")
-                        .WithMany("Eventos")
-                        .HasForeignKey("TurnoAsignacionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SistemaPeaje.Core.Entities.Turno", "Turno")
-                        .WithMany("Eventos")
-                        .HasForeignKey("TurnoId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("AsignadoA");
-
-                    b.Navigation("Empleado");
-
-                    b.Navigation("Estacion");
-
-                    b.Navigation("ReportadoPor");
-
-                    b.Navigation("ResueltoPor");
-
-                    b.Navigation("Turno");
-
-                    b.Navigation("TurnoAsignacion");
                 });
 
             modelBuilder.Entity("SistemaPeaje.Core.Entities.Usuario", b =>
@@ -2099,27 +1553,6 @@ namespace SistemaPeaje.Infrastructure.Migrations
                     b.Navigation("Tarifas");
 
                     b.Navigation("Transacciones");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.Turno", b =>
-                {
-                    b.Navigation("Eventos");
-
-                    b.Navigation("RegistrosTiempo");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.TurnoAsignacion", b =>
-                {
-                    b.Navigation("Eventos");
-
-                    b.Navigation("RegistrosTiempo");
-
-                    b.Navigation("TurnoEjecutado");
-                });
-
-            modelBuilder.Entity("SistemaPeaje.Core.Entities.TurnoTemplate", b =>
-                {
-                    b.Navigation("TurnoAsignaciones");
                 });
 #pragma warning restore 612, 618
         }

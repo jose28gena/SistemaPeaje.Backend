@@ -1,0 +1,281 @@
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using SistemaPeaje.Application.Features.TurnosAdmin.TurnoEventos;
+using SistemaPeaje.Application.DTOs.TurnosAdmin;
+
+namespace SistemaPeaje.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class TurnoEventosController : ControllerBase
+{
+    private readonly IMediator _mediator;
+
+    public TurnoEventosController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+
+    /// <summary>
+    /// Obtiene eventos de turnos con filtros
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<List<TurnoEventoDto>>> GetTurnoEventos(
+        [FromQuery] int? turnoId = null,
+        [FromQuery] int? empleadoId = null,
+        [FromQuery] int? estacionId = null,
+        [FromQuery] string? tipoEvento = null,
+        [FromQuery] string? estado = null,
+        [FromQuery] DateTime? fechaDesde = null,
+        [FromQuery] DateTime? fechaHasta = null)
+    {
+        var query = new GetTurnoEventosQuery
+        {
+            TurnoId = turnoId,
+            EmpleadoId = empleadoId,
+            EstacionId = estacionId,
+            TipoEvento = tipoEvento,
+            Estado = estado,
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta
+        };
+        
+        var eventos = await _mediator.Send(query);
+        return Ok(eventos);
+    }
+
+    /// <summary>
+    /// Obtiene un evento específico por ID
+    /// </summary>
+    [HttpGet("{id}")]
+    public async Task<ActionResult<TurnoEventoDto>> GetTurnoEvento(int id)
+    {
+        var query = new GetTurnoEventoByIdQuery { Id = id };
+        var evento = await _mediator.Send(query);
+        
+        if (evento == null)
+            return NotFound($"Evento de turno con ID {id} no encontrado");
+            
+        return Ok(evento);
+    }
+
+    /// <summary>
+    /// Crea un nuevo evento de turno
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult<TurnoEventoDto>> CreateTurnoEvento(CreateTurnoEventoCommand command)
+    {
+        try
+        {
+            var evento = await _mediator.Send(command);
+            return CreatedAtAction(nameof(GetTurnoEvento), new { id = evento.Id }, evento);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Actualiza un evento de turno existente
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<ActionResult<TurnoEventoDto>> UpdateTurnoEvento(int id, UpdateTurnoEventoCommand command)
+    {
+        try
+        {
+            command.Id = id;
+            var evento = await _mediator.Send(command);
+            return Ok(evento);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Resuelve un evento de turno
+    /// </summary>
+    [HttpPost("{id}/resolver")]
+    public async Task<ActionResult<TurnoEventoDto>> ResolverTurnoEvento(int id, [FromBody] ResolverEventoRequest request)
+    {
+        try
+        {
+            var command = new ResolverTurnoEventoCommand
+            {
+                EventoId = id,
+                ResueltoPorId = request.ResueltoPorId,
+                SolucionAplicada = request.SolucionAplicada,
+                AccionesTomadas = request.AccionesTomadas,
+                MedidasPreventivas = request.MedidasPreventivas
+            };
+            
+            var evento = await _mediator.Send(command);
+            return Ok(evento);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Asigna un evento a un empleado responsable
+    /// </summary>
+    [HttpPost("{id}/asignar")]
+    public async Task<ActionResult<TurnoEventoDto>> AsignarTurnoEvento(int id, [FromBody] AsignarEventoRequest request)
+    {
+        try
+        {
+            var command = new AsignarTurnoEventoCommand
+            {
+                EventoId = id,
+                AsignadoAId = request.AsignadoAId,
+                Observaciones = request.Observaciones
+            };
+            
+            var evento = await _mediator.Send(command);
+            return Ok(evento);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Cierra un evento de turno
+    /// </summary>
+    [HttpPost("{id}/cerrar")]
+    public async Task<ActionResult<TurnoEventoDto>> CerrarTurnoEvento(int id, [FromBody] CerrarEventoRequest request)
+    {
+        try
+        {
+            var command = new CerrarTurnoEventoCommand
+            {
+                EventoId = id,
+                Observaciones = request.Observaciones
+            };
+            
+            var evento = await _mediator.Send(command);
+            return Ok(evento);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene eventos críticos o de alta prioridad
+    /// </summary>
+    [HttpGet("criticos")]
+    public async Task<ActionResult<List<TurnoEventoDto>>> GetEventosCriticos([FromQuery] string? estado = "Abierto")
+    {
+        var query = new GetEventosCriticosQuery { Estado = estado };
+        var eventos = await _mediator.Send(query);
+        return Ok(eventos);
+    }
+
+    /// <summary>
+    /// Obtiene resumen de eventos por tipo
+    /// </summary>
+    [HttpGet("resumen-por-tipo")]
+    public async Task<ActionResult<ResumenEventosPorTipoDto>> GetResumenEventosPorTipo(
+        [FromQuery] DateTime fechaDesde,
+        [FromQuery] DateTime fechaHasta,
+        [FromQuery] int? estacionId = null)
+    {
+        var query = new GetResumenEventosPorTipoQuery
+        {
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            EstacionId = estacionId
+        };
+        
+        var resumen = await _mediator.Send(query);
+        return Ok(resumen);
+    }
+
+    /// <summary>
+    /// Obtiene eventos pendientes de resolución
+    /// </summary>
+    [HttpGet("pendientes")]
+    public async Task<ActionResult<List<TurnoEventoDto>>> GetEventosPendientes(
+        [FromQuery] int? asignadoAId = null,
+        [FromQuery] string? prioridad = null)
+    {
+        var query = new GetEventosPendientesQuery 
+        { 
+            AsignadoAId = asignadoAId,
+            Prioridad = prioridad
+        };
+        var eventos = await _mediator.Send(query);
+        return Ok(eventos);
+    }
+
+    /// <summary>
+    /// Adjunta archivos a un evento
+    /// </summary>
+    [HttpPost("{id}/adjuntar-archivos")]
+    public async Task<ActionResult<TurnoEventoDto>> AdjuntarArchivos(int id, [FromForm] AdjuntarArchivosRequest request)
+    {
+        try
+        {
+            var command = new AdjuntarArchivosEventoCommand
+            {
+                EventoId = id,
+                Archivos = request.Archivos
+            };
+            
+            var evento = await _mediator.Send(command);
+            return Ok(evento);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+}
+
+// DTOs auxiliares
+public class ResolverEventoRequest
+{
+    public int ResueltoPorId { get; set; }
+    public string SolucionAplicada { get; set; } = string.Empty;
+    public string? AccionesTomadas { get; set; }
+    public string? MedidasPreventivas { get; set; }
+}
+
+public class AsignarEventoRequest
+{
+    public int AsignadoAId { get; set; }
+    public string? Observaciones { get; set; }
+}
+
+public class CerrarEventoRequest
+{
+    public string? Observaciones { get; set; }
+}
+
+public class AdjuntarArchivosRequest
+{
+    public List<IFormFile> Archivos { get; set; } = new List<IFormFile>();
+}
