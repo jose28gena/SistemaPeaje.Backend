@@ -1,0 +1,21 @@
+### Test básico de endpoints de Turnos
+
+### 1. Obtener todos los turnos
+GET http://localhost:51394/api/Turnos
+Accept: application/json
+
+### 2. Obtener turnos (HTTPS)
+GET https://localhost:51393/api/Turnos
+Accept: application/json
+
+### 3. Obtener configuración de turnos (Admin)
+GET http://localhost:51394/api/TurnosAdmin/configuracion
+Accept: application/json
+
+### 4. Obtener templates de turnos
+GET http://localhost:51394/api/TurnoTemplates
+Accept: application/json
+
+### 5. Obtener asignaciones de turnos
+GET http://localhost:51394/api/TurnoAsignaciones
+Accept: application/json

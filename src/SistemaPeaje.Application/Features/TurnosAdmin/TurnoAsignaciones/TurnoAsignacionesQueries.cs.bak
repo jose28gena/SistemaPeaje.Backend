@@ -1,0 +1,135 @@
+using AutoMapper;
+using MediatR;
+using SistemaPeaje.Application.DTOs.TurnosAdmin;
+using SistemaPeaje.Core.Entities;
+using SistemaPeaje.Core.Interfaces;
+
+namespace SistemaPeaje.Application.Features.TurnosAdmin.TurnoAsignaciones;
+
+/// <summary>
+/// Handlers para los Queries de TurnoAsignaciones
+/// </summary>
+
+public class GetTurnoAsignacionesHandler : IRequestHandler<GetTurnoAsignacionesQuery, List<TurnoAsignacionDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public GetTurnoAsignacionesHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    {
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<List<TurnoAsignacionDto>> Handle(GetTurnoAsignacionesQuery request, CancellationToken cancellationToken)
+    {
+        var asignaciones = await _unitOfWork.Repository<TurnoAsignacion>()
+            .GetAsync(a => 
+                (!request.FechaInicio.HasValue || a.FechaTurno >= request.FechaInicio.Value) &&
+                (!request.FechaFin.HasValue || a.FechaTurno <= request.FechaFin.Value) &&
+                (!request.EmpleadoId.HasValue || a.EmpleadoId == request.EmpleadoId.Value) &&
+                (!request.EstacionId.HasValue || a.EstacionId == request.EstacionId.Value));
+
+        return _mapper.Map<List<TurnoAsignacionDto>>(asignaciones);
+    }
+}
+
+public class GetTurnoAsignacionByIdHandler : IRequestHandler<GetTurnoAsignacionByIdQuery, TurnoAsignacionDto?>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public GetTurnoAsignacionByIdHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    {
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<TurnoAsignacionDto?> Handle(GetTurnoAsignacionByIdQuery request, CancellationToken cancellationToken)
+    {
+        var asignacion = await _unitOfWork.Repository<TurnoAsignacion>().GetByIdAsync(request.Id);
+        return asignacion != null ? _mapper.Map<TurnoAsignacionDto>(asignacion) : null;
+    }
+}
+
+public class GetCalendarioTurnosHandler : IRequestHandler<GetCalendarioTurnosQuery, List<CalendarioTurnosDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public GetCalendarioTurnosHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    {
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<List<CalendarioTurnosDto>> Handle(GetCalendarioTurnosQuery request, CancellationToken cancellationToken)
+    {
+        var asignaciones = await _unitOfWork.Repository<TurnoAsignacion>()
+            .GetAsync(a => 
+                a.FechaTurno >= request.FechaInicio &&
+                a.FechaTurno <= request.FechaFin &&
+                (!request.EstacionId.HasValue || a.EstacionId == request.EstacionId.Value));
+
+        // Agrupar por fecha para crear el calendario
+        var calendario = asignaciones
+            .GroupBy(a => a.FechaTurno.Date)
+            .Select(g => new CalendarioTurnosDto
+            {
+                Fecha = g.Key,
+                TotalTurnos = g.Count(),
+                TurnosAsignados = g.ToList()
+                    .Select(a => _mapper.Map<TurnoAsignacionDto>(a))
+                    .ToList()
+            })
+            .OrderBy(c => c.Fecha)
+            .ToList();
+
+        return calendario;
+    }
+}
+
+public class GetTurnosEmpleadoHandler : IRequestHandler<GetTurnosEmpleadoQuery, List<TurnoAsignacionDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public GetTurnosEmpleadoHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    {
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<List<TurnoAsignacionDto>> Handle(GetTurnosEmpleadoQuery request, CancellationToken cancellationToken)
+    {
+        var asignaciones = await _unitOfWork.Repository<TurnoAsignacion>()
+            .GetAsync(a => 
+                a.EmpleadoId == request.EmpleadoId &&
+                (!request.FechaInicio.HasValue || a.FechaTurno >= request.FechaInicio.Value) &&
+                (!request.FechaFin.HasValue || a.FechaTurno <= request.FechaFin.Value));
+
+        return _mapper.Map<List<TurnoAsignacionDto>>(asignaciones);
+    }
+}
+
+public class GetTurnosEstacionHandler : IRequestHandler<GetTurnosEstacionQuery, List<TurnoAsignacionDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public GetTurnosEstacionHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    {
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<List<TurnoAsignacionDto>> Handle(GetTurnosEstacionQuery request, CancellationToken cancellationToken)
+    {
+        var asignaciones = await _unitOfWork.Repository<TurnoAsignacion>()
+            .GetAsync(a => 
+                a.EstacionId == request.EstacionId &&
+                (!request.Fecha.HasValue || a.FechaTurno.Date == request.Fecha.Value.Date));
+
+        return _mapper.Map<List<TurnoAsignacionDto>>(asignaciones);
+    }
+}

@@ -108,7 +108,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Commented out for development to avoid CORS issues
 
 app.UseCors("AllowAngularApp");
 

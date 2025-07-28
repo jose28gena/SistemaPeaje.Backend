@@ -1,0 +1,162 @@
+using AutoMapper;
+using MediatR;
+using SistemaPeaje.Application.DTOs.TurnosAdmin;
+using SistemaPeaje.Core.Entities;
+using SistemaPeaje.Core.Interfaces;
+
+namespace SistemaPeaje.Application.Features.TurnosAdmin.TurnoEventos;
+
+/// <summary>
+/// Handlers para los Queries de TurnoEventos
+/// </summary>
+
+public class GetTurnoEventosHandler : IRequestHandler<GetTurnoEventosQuery, List<TurnoEventoDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public GetTurnoEventosHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    {
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<List<TurnoEventoDto>> Handle(GetTurnoEventosQuery request, CancellationToken cancellationToken)
+    {
+        var eventos = await _unitOfWork.Repository<TurnoEvento>()
+            .GetAsync(e => 
+                (!request.TurnoAsignacionId.HasValue || e.TurnoAsignacionId == request.TurnoAsignacionId.Value) &&
+                (string.IsNullOrEmpty(request.TipoEvento) || e.TipoEvento == request.TipoEvento) &&
+                (!request.EsResuelto.HasValue || e.EsResuelto == request.EsResuelto.Value));
+
+        return _mapper.Map<List<TurnoEventoDto>>(eventos);
+    }
+}
+
+public class GetTurnoEventoByIdHandler : IRequestHandler<GetTurnoEventoByIdQuery, TurnoEventoDto?>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public GetTurnoEventoByIdHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    {
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<TurnoEventoDto?> Handle(GetTurnoEventoByIdQuery request, CancellationToken cancellationToken)
+    {
+        var evento = await _unitOfWork.Repository<TurnoEvento>().GetByIdAsync(request.Id);
+        return evento != null ? _mapper.Map<TurnoEventoDto>(evento) : null;
+    }
+}
+
+public class GetEventosPendientesHandler : IRequestHandler<GetEventosPendientesQuery, List<TurnoEventoDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public GetEventosPendientesHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    {
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<List<TurnoEventoDto>> Handle(GetEventosPendientesQuery request, CancellationToken cancellationToken)
+    {
+        var eventos = await _unitOfWork.Repository<TurnoEvento>()
+            .GetAsync(e => !e.EsResuelto);
+
+        return _mapper.Map<List<TurnoEventoDto>>(eventos);
+    }
+}
+
+public class GetResumenEventosPorTipoHandler : IRequestHandler<GetResumenEventosPorTipoQuery, List<ResumenEventosPorTipoDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+
+    public GetResumenEventosPorTipoHandler(IUnitOfWork unitOfWork)
+    {
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<List<ResumenEventosPorTipoDto>> Handle(GetResumenEventosPorTipoQuery request, CancellationToken cancellationToken)
+    {
+        var eventos = await _unitOfWork.Repository<TurnoEvento>()
+            .GetAsync(e => 
+                e.FechaHoraEvento >= request.FechaInicio &&
+                e.FechaHoraEvento <= request.FechaFin);
+
+        var resumen = eventos
+            .GroupBy(e => e.TipoEvento)
+            .Select(g => new ResumenEventosPorTipoDto
+            {
+                TipoEvento = g.Key,
+                TotalEventos = g.Count(),
+                EventosResueltos = g.Count(e => e.EsResuelto),
+                EventosPendientes = g.Count(e => !e.EsResuelto)
+            })
+            .OrderByDescending(r => r.TotalEventos)
+            .ToList();
+
+        return resumen;
+    }
+}
+
+public class GetEventosPorEmpleadoHandler : IRequestHandler<GetEventosPorEmpleadoQuery, List<TurnoEventoDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public GetEventosPorEmpleadoHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    {
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<List<TurnoEventoDto>> Handle(GetEventosPorEmpleadoQuery request, CancellationToken cancellationToken)
+    {
+        // Obtener asignaciones del empleado
+        var asignaciones = await _unitOfWork.Repository<TurnoAsignacion>()
+            .GetAsync(a => a.EmpleadoId == request.EmpleadoId);
+
+        var asignacionIds = asignaciones.Select(a => a.Id).ToList();
+
+        var eventos = await _unitOfWork.Repository<TurnoEvento>()
+            .GetAsync(e => 
+                asignacionIds.Contains(e.TurnoAsignacionId) &&
+                (!request.FechaInicio.HasValue || e.FechaHoraEvento >= request.FechaInicio.Value) &&
+                (!request.FechaFin.HasValue || e.FechaHoraEvento <= request.FechaFin.Value));
+
+        return _mapper.Map<List<TurnoEventoDto>>(eventos);
+    }
+}
+
+public class GetEventosPorEstacionHandler : IRequestHandler<GetEventosPorEstacionQuery, List<TurnoEventoDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public GetEventosPorEstacionHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    {
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<List<TurnoEventoDto>> Handle(GetEventosPorEstacionQuery request, CancellationToken cancellationToken)
+    {
+        // Obtener asignaciones de la estación
+        var asignaciones = await _unitOfWork.Repository<TurnoAsignacion>()
+            .GetAsync(a => a.EstacionId == request.EstacionId);
+
+        var asignacionIds = asignaciones.Select(a => a.Id).ToList();
+
+        var eventos = await _unitOfWork.Repository<TurnoEvento>()
+            .GetAsync(e => 
+                asignacionIds.Contains(e.TurnoAsignacionId) &&
+                (!request.FechaInicio.HasValue || e.FechaHoraEvento >= request.FechaInicio.Value) &&
+                (!request.FechaFin.HasValue || e.FechaHoraEvento <= request.FechaFin.Value));
+
+        return _mapper.Map<List<TurnoEventoDto>>(eventos);
+    }
+}
