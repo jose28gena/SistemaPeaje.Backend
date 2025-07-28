@@ -154,3 +154,28 @@ public class TurnoEventoDto
     };
     public string EstadoDisplay => EsResuelto ? "✅ Resuelto" : "⏳ Pendiente";
 }
+
+/// <summary>
+/// DTO para calendario de turnos
+/// </summary>
+public class CalendarioTurnosDto
+{
+    public DateTime Fecha { get; set; }
+    public int TotalTurnos { get; set; }
+    public List<TurnoAsignacionDto> TurnosAsignados { get; set; } = new();
+}
+
+/// <summary>
+/// DTO para resumen de eventos por tipo
+/// </summary>
+public class ResumenEventosPorTipoDto
+{
+    public string TipoEvento { get; set; } = string.Empty;
+    public int TotalEventos { get; set; }
+    public int EventosResueltos { get; set; }
+    public int EventosPendientes { get; set; }
+    
+    public decimal PorcentajeResolucion => TotalEventos > 0 
+        ? Math.Round((decimal)EventosResueltos / TotalEventos * 100, 1) 
+        : 0;
+}

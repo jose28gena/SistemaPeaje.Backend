@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaPeaje.Application;
 using SistemaPeaje.Infrastructure;
 using SistemaPeaje.Infrastructure.Data;
+using SistemaPeaje.Infrastructure.Services;
 using SistemaPeaje.API.Middleware;
 using Serilog;
 using FluentValidation;
@@ -46,6 +47,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Application Services
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
+
+// Memory Cache para optimizaciones de tiempo real
+builder.Services.AddMemoryCache(options =>
+{
+    options.SizeLimit = 1000; // Límite de elementos
+    options.CompactionPercentage = 0.25; // Liberar 25% cuando se alcance el límite
+});
 
 // CORS
 builder.Services.AddCors(options =>

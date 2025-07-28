@@ -85,31 +85,48 @@ public static class SeedData
         var tiposVehiculo = new List<TipoVehiculo>
         {
             new() { 
-                Nombre = "Automóvil", 
-                Descripcion = "Vehículo de pasajeros hasta 5 personas", 
+                Nombre = "Auto", 
+                Descripcion = "Automóvil de pasajeros", 
                 NumeroEjes = 2, 
-                TarifaBase = 50.00m,
+                TarifaBase = 1500.00m,
+                Categoria = "LIVIANO",
+                EsActivo = true,
                 FechaCreacion = DateTime.UtcNow
             },
             new() { 
-                Nombre = "Motocicleta", 
-                Descripcion = "Vehículo de dos ruedas", 
+                Nombre = "Moto", 
+                Descripcion = "Motocicleta", 
                 NumeroEjes = 2, 
-                TarifaBase = 25.00m,
-                FechaCreacion = DateTime.UtcNow
-            },
-            new() { 
-                Nombre = "Camión 2 Ejes", 
-                Descripcion = "Camión liviano de 2 ejes", 
-                NumeroEjes = 2, 
-                TarifaBase = 100.00m,
+                TarifaBase = 800.00m,
+                Categoria = "LIVIANO",
+                EsActivo = true,
                 FechaCreacion = DateTime.UtcNow
             },
             new() { 
                 Nombre = "Bus", 
-                Descripcion = "Vehículo de transporte público", 
+                Descripcion = "Autobús de pasajeros", 
                 NumeroEjes = 2, 
-                TarifaBase = 75.00m,
+                TarifaBase = 3000.00m,
+                Categoria = "PESADO",
+                EsActivo = true,
+                FechaCreacion = DateTime.UtcNow
+            },
+            new() { 
+                Nombre = "Camión Rígido", 
+                Descripcion = "Camión de carga rígido", 
+                NumeroEjes = 2, 
+                TarifaBase = 4500.00m,
+                Categoria = "PESADO",
+                EsActivo = true,
+                FechaCreacion = DateTime.UtcNow
+            },
+            new() { 
+                Nombre = "Camión Articulado", 
+                Descripcion = "Camión articulado con remolque", 
+                NumeroEjes = 5, 
+                TarifaBase = 7500.00m,
+                Categoria = "ESPECIAL",
+                EsActivo = true,
                 FechaCreacion = DateTime.UtcNow
             }
         };
