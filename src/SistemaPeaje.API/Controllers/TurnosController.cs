@@ -75,7 +75,11 @@ public class TurnosController : ControllerBase
             var command = new CerrarTurnoCommand
             {
                 TurnoId = id,
-                MontoFinalCaja = request.MontoFinalCaja
+                MontoFinalCaja = request.MontoFinalCaja,
+                VentasEfectivo = request.VentasEfectivo,
+                EfectivoContado = request.EfectivoContado,
+                VentasPrepago = request.VentasPrepago,
+                CantidadExentos = request.CantidadExentos
             };
 
             var turno = await _mediator.Send(command);
@@ -122,6 +126,10 @@ public class TurnosController : ControllerBase
 public class CerrarTurnoRequest
 {
     public decimal MontoFinalCaja { get; set; }
+    public decimal? VentasEfectivo { get; set; }
+    public decimal? EfectivoContado { get; set; }
+    public decimal? VentasPrepago { get; set; }
+    public int? CantidadExentos { get; set; }
 }
 
 public class ResumenTurnoDto

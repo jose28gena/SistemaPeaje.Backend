@@ -4,6 +4,7 @@ public class Turno : BaseEntity
 {
     public int EmpleadoId { get; set; }
     public int EstacionId { get; set; }
+    public int? CarrilId { get; set; } // Carril asignado al turno
     public int? TurnoAsignacionId { get; set; } // Relación con la asignación programada
     public DateTime FechaInicio { get; set; }
     public DateTime? FechaFin { get; set; }
@@ -28,6 +29,12 @@ public class Turno : BaseEntity
     public decimal TotalRecaudado { get; set; } = 0;
     public int TotalVehiculos { get; set; } = 0;
     
+    // Cuadre/cierre por medios de pago
+    public decimal? VentasEfectivo { get; set; }
+    public decimal? EfectivoContado { get; set; }
+    public decimal? VentasPrepago { get; set; }
+    public int? CantidadExentos { get; set; }
+    
     // Observaciones y notas
     public string? Observaciones { get; set; }
     public string? MotivoCierre { get; set; }
@@ -36,6 +43,7 @@ public class Turno : BaseEntity
     // Navigation Properties
     public virtual Empleado? Empleado { get; set; }
     public virtual Estacion? Estacion { get; set; }
+    public virtual Carril? Carril { get; set; }
     public virtual TurnoAsignacion? TurnoAsignacion { get; set; }
     public virtual ICollection<RegistroTiempo> RegistrosTiempo { get; set; } = new List<RegistroTiempo>();
     public virtual ICollection<TurnoEvento> Eventos { get; set; } = new List<TurnoEvento>();

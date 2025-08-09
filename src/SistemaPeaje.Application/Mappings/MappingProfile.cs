@@ -193,6 +193,7 @@ public class TurnoDto
     public string? EmpleadoNombre { get; set; }
     public int EstacionId { get; set; }
     public string? EstacionNombre { get; set; }
+    public int? CarrilId { get; set; }
     public DateTime FechaInicio { get; set; }
     public DateTime? FechaFin { get; set; }
     public decimal MontoInicialCaja { get; set; }
@@ -200,6 +201,10 @@ public class TurnoDto
     public string Estado { get; set; } = string.Empty;
     public TimeSpan? DuracionTurno => FechaFin.HasValue ? FechaFin - FechaInicio : null;
     public decimal? DiferenciaCaja => MontoFinalCaja.HasValue ? MontoFinalCaja - MontoInicialCaja : null;
+    public decimal? VentasEfectivo { get; set; }
+    public decimal? EfectivoContado { get; set; }
+    public decimal? VentasPrepago { get; set; }
+    public int? CantidadExentos { get; set; }
     public DateTime FechaCreacion { get; set; }
 }
 

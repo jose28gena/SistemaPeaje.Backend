@@ -133,6 +133,16 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.LimiteCredito).HasColumnType("decimal(18,2)");
         });
 
+        // Configuración de ConfiguracionTipoPago
+        modelBuilder.Entity<ConfiguracionTipoPago>(entity =>
+        {
+            entity.Property(e => e.ComisionFija).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.ComisionPorcentaje).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.DescuentoPorDefecto).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.LimiteDiario).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.LimiteTransaccion).HasColumnType("decimal(18,2)");
+        });
+
         // Configuración de Cliente
         modelBuilder.Entity<Cliente>(entity =>
         {
@@ -218,6 +228,12 @@ public class ApplicationDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.MontoInicialCaja).HasColumnType("decimal(18,2)");
             entity.Property(e => e.MontoFinalCaja).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.MontoHorasExtras).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.TotalRecaudado).HasColumnType("decimal(18,2)");
+            // Campos de cuadre/cierre con precisión decimal
+            entity.Property(e => e.VentasEfectivo).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.EfectivoContado).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.VentasPrepago).HasColumnType("decimal(18,2)");
             entity.Property(e => e.Estado).HasMaxLength(20).IsRequired();
 
             entity.HasOne(e => e.Empleado)
@@ -229,6 +245,13 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.EstacionId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Relación opcional con Carril asignado al turno
+            entity.HasOne(e => e.Carril)
+                .WithMany()
+                .HasForeignKey(e => e.CarrilId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configuración de EventoTransito

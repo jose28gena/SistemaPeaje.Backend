@@ -10,6 +10,7 @@ public record AbrirTurnoCommand : IRequest<TurnoDto>
 {
     public int EmpleadoId { get; set; }
     public int EstacionId { get; set; }
+    public int? CarrilId { get; set; }
     public decimal MontoInicialCaja { get; set; }
 }
 
@@ -43,6 +44,7 @@ public class AbrirTurnoHandler : IRequestHandler<AbrirTurnoCommand, TurnoDto>
         {
             EmpleadoId = request.EmpleadoId,
             EstacionId = request.EstacionId,
+            CarrilId = request.CarrilId,
             FechaInicio = DateTime.UtcNow,
             MontoInicialCaja = request.MontoInicialCaja,
             Estado = "Abierto"

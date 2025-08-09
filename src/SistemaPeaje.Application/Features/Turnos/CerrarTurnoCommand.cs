@@ -10,6 +10,10 @@ public record CerrarTurnoCommand : IRequest<TurnoDto>
 {
     public int TurnoId { get; set; }
     public decimal MontoFinalCaja { get; set; }
+    public decimal? VentasEfectivo { get; set; }
+    public decimal? EfectivoContado { get; set; }
+    public decimal? VentasPrepago { get; set; }
+    public int? CantidadExentos { get; set; }
 }
 
 public class CerrarTurnoHandler : IRequestHandler<CerrarTurnoCommand, TurnoDto>
@@ -34,6 +38,10 @@ public class CerrarTurnoHandler : IRequestHandler<CerrarTurnoCommand, TurnoDto>
 
         turno.FechaFin = DateTime.UtcNow;
         turno.MontoFinalCaja = request.MontoFinalCaja;
+    turno.VentasEfectivo = request.VentasEfectivo;
+    turno.EfectivoContado = request.EfectivoContado;
+    turno.VentasPrepago = request.VentasPrepago;
+    turno.CantidadExentos = request.CantidadExentos;
         turno.Estado = "Cerrado";
 
         await _unitOfWork.Repository<Turno>().UpdateAsync(turno);
