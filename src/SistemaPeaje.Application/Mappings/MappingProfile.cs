@@ -25,6 +25,14 @@ public class MappingProfile : Profile
         CreateMap<UpdateCarrilDto, Carril>();
         CreateMap<TipoVehiculo, TipoVehiculoDto>();
         CreateMap<TipoPago, TipoPagoDto>();
+        
+        // ConfiguracionTipoPago mappings
+        CreateMap<ConfiguracionTipoPago, ConfiguracionTipoPagoDto>()
+            .ForMember(dest => dest.TipoPagoNombre, opt => opt.MapFrom(src => src.TipoPago != null ? src.TipoPago.Nombre : null));
+        CreateMap<CreateConfiguracionTipoPagoDto, ConfiguracionTipoPago>();
+        CreateMap<UpdateConfiguracionTipoPagoDto, ConfiguracionTipoPago>();
+        CreateMap<TipoPago, TipoPagoConConfiguracionDto>()
+            .ForMember(dest => dest.Configuracion, opt => opt.MapFrom(src => src.Configuracion));
         CreateMap<TipoCliente, TipoClienteDto>()
             .ForMember(dest => dest.EsActivo, opt => opt.MapFrom(src => src.Activo));
         CreateMap<Usuario, UsuarioDto>()

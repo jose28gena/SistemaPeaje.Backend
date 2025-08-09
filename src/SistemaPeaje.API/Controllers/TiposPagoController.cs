@@ -87,6 +87,88 @@ public class TiposPagoController : ControllerBase
 
         return Ok(response);
     }
+
+    /// <summary>
+    /// Inicializa los tipos de pago básicos del sistema
+    /// </summary>
+    [HttpPost("inicializar-tipos-basicos")]
+    public async Task<ActionResult<List<TipoPagoDto>>> InicializarTiposBasicos()
+    {
+        var tiposCreados = new List<TipoPagoDto>();
+
+        // Crear Efectivo
+        try
+        {
+            var efectivo = await _mediator.Send(new CreateTipoPagoCommand
+            {
+                Nombre = "Efectivo",
+                Descripcion = "Pago en efectivo - billetes y monedas",
+                RequiereAutorizacion = false,
+                LimiteCredito = null
+            });
+            tiposCreados.Add(efectivo);
+        }
+        catch (Exception) { /* Ignorar si ya existe */ }
+
+        // Crear Prepago
+        try
+        {
+            var prepago = await _mediator.Send(new CreateTipoPagoCommand
+            {
+                Nombre = "Prepago",
+                Descripcion = "Pago con saldo prepagado - tarjetas recargables",
+                RequiereAutorizacion = true,
+                LimiteCredito = 50000
+            });
+            tiposCreados.Add(prepago);
+        }
+        catch (Exception) { /* Ignorar si ya existe */ }
+
+        // Crear Residentes
+        try
+        {
+            var residentes = await _mediator.Send(new CreateTipoPagoCommand
+            {
+                Nombre = "Residentes",
+                Descripcion = "Descuento especial para residentes locales",
+                RequiereAutorizacion = true,
+                LimiteCredito = 100000
+            });
+            tiposCreados.Add(residentes);
+        }
+        catch (Exception) { /* Ignorar si ya existe */ }
+
+        return Ok(new
+        {
+            message = $"Se inicializaron {tiposCreados.Count} tipos de pago básicos",
+            tipos = tiposCreados
+        });
+    }
+
+    /// <summary>
+    /// Obtiene estadísticas de uso de tipos de pago
+    /// </summary>
+    [HttpGet("estadisticas")]
+    public ActionResult<object> GetEstadisticasTiposPago()
+    {
+        // Aquí se implementaría la lógica para obtener estadísticas
+        // Por ahora devolvemos datos de ejemplo
+        var estadisticas = new
+        {
+            TotalTipos = 3,
+            TiposActivos = 3,
+            TiposInactivos = 0,
+            UsoMensual = new
+            {
+                Efectivo = new { Transacciones = 1250, Monto = 875000.50m, Porcentaje = 45.2m },
+                Prepago = new { Transacciones = 950, Monto = 662500.75m, Porcentaje = 34.5m },
+                Residentes = new { Transacciones = 562, Monto = 393400.25m, Porcentaje = 20.3m }
+            },
+            FechaActualizacion = DateTime.UtcNow
+        };
+
+        return Ok(estadisticas);
+    }
 }
 
 // DTOs para procesamiento de pagos

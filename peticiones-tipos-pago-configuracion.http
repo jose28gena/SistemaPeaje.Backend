@@ -1,0 +1,323 @@
+# Peticiones HTTP - Módulo 11.10 Tipos de Pago
+# Sistema de Peaje - Configuración de Métodos Activos
+# Usar con REST Client, Thunder Client, Postman, etc.
+
+@baseUrl = https://localhost:51393
+@contentType = application/json
+
+### ================================
+### 11.10 TIPOS DE PAGO - CONFIGURACIÓN
+### ================================
+
+### 1. Inicializar tipos de pago básicos
+POST {{baseUrl}}/api/TiposPago/inicializar-tipos-basicos
+Content-Type: {{contentType}}
+
+### 2. Obtener todos los tipos de pago
+GET {{baseUrl}}/api/TiposPago
+Accept: {{contentType}}
+
+### 3. Obtener tipos de pago activos solamente
+GET {{baseUrl}}/api/TiposPago/activos
+Accept: {{contentType}}
+
+### 4. Obtener estadísticas de tipos de pago
+GET {{baseUrl}}/api/TiposPago/estadisticas
+Accept: {{contentType}}
+
+### ================================
+### CONFIGURACIONES DE TIPOS DE PAGO
+### ================================
+
+### 5. Inicializar configuraciones por defecto
+POST {{baseUrl}}/api/ConfiguracionTiposPago/inicializar-configuraciones-defecto
+Content-Type: {{contentType}}
+
+### 6. Obtener todas las configuraciones
+GET {{baseUrl}}/api/ConfiguracionTiposPago
+Accept: {{contentType}}
+
+### 7. Obtener tipos activos con configuración
+GET {{baseUrl}}/api/ConfiguracionTiposPago/activos-con-configuracion
+Accept: {{contentType}}
+
+### 8. Obtener configuración específica por tipo de pago (Efectivo - ID 1)
+GET {{baseUrl}}/api/ConfiguracionTiposPago/tipo-pago/1
+Accept: {{contentType}}
+
+### 9. Obtener configuración específica por tipo de pago (Prepago - ID 2)
+GET {{baseUrl}}/api/ConfiguracionTiposPago/tipo-pago/2
+Accept: {{contentType}}
+
+### 10. Obtener configuración específica por tipo de pago (Residentes - ID 3)
+GET {{baseUrl}}/api/ConfiguracionTiposPago/tipo-pago/3
+Accept: {{contentType}}
+
+### ================================
+### CÁLCULO DE MONTOS
+### ================================
+
+### 11. Calcular monto para Efectivo - $100
+POST {{baseUrl}}/api/ConfiguracionTiposPago/calcular-monto
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 1,
+  "montoBase": 100
+}
+
+### 12. Calcular monto para Prepago - $500
+POST {{baseUrl}}/api/ConfiguracionTiposPago/calcular-monto
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 2,
+  "montoBase": 500
+}
+
+### 13. Calcular monto para Residentes - $1000
+POST {{baseUrl}}/api/ConfiguracionTiposPago/calcular-monto
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 3,
+  "montoBase": 1000
+}
+
+### 14. Calcular monto alto para probar límites - $8000
+POST {{baseUrl}}/api/ConfiguracionTiposPago/calcular-monto
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 1,
+  "montoBase": 8000
+}
+
+### ================================
+### GESTIÓN DE CONFIGURACIONES
+### ================================
+
+### 15. Crear nueva configuración para Tarjeta de Crédito
+POST {{baseUrl}}/api/ConfiguracionTiposPago
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 4,
+  "moneda": "MXN",
+  "simboloMoneda": "$",
+  "limiteDiario": 150000,
+  "limiteTransaccion": 20000,
+  "comisionPorcentaje": 3.5,
+  "comisionFija": 10,
+  "estaActivo": true,
+  "requiereValidacionAdicional": true,
+  "tiempoEsperaSegundos": 60,
+  "descuentoPorDefecto": 0,
+  "permiteTransaccionesParcialeS": true,
+  "configuracionEspecifica": "{\"requierePin\": true, \"validarCvv\": true, \"tipoTarjeta\": \"credito\"}",
+  "observaciones": "Configuración para pagos con tarjeta de crédito"
+}
+
+### 16. Actualizar configuración de Prepago (aumentar descuento)
+PUT {{baseUrl}}/api/ConfiguracionTiposPago/2
+Content-Type: {{contentType}}
+
+{
+  "id": 2,
+  "tipoPagoId": 2,
+  "moneda": "MXN",
+  "simboloMoneda": "$",
+  "limiteDiario": 100000,
+  "limiteTransaccion": 10000,
+  "comisionPorcentaje": 1.5,
+  "comisionFija": 0,
+  "estaActivo": true,
+  "requiereValidacionAdicional": true,
+  "tiempoEsperaSegundos": 30,
+  "descuentoPorDefecto": 8,
+  "permiteTransaccionesParcialeS": true,
+  "configuracionEspecifica": "{\"requierePin\": true, \"validarSaldo\": true, \"promocionEspecial\": true}",
+  "observaciones": "Configuración actualizada con promoción especial 8% descuento"
+}
+
+### ================================
+### PRUEBAS DE PROCESAMIENTO
+### ================================
+
+### 17. Procesar pago en efectivo - $250
+POST {{baseUrl}}/api/TiposPago/procesar
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 1,
+  "tipoPago": "efectivo",
+  "monto": 250,
+  "saldoDisponible": 0
+}
+
+### 18. Procesar pago prepago - $750
+POST {{baseUrl}}/api/TiposPago/procesar
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 2,
+  "tipoPago": "prepago",
+  "monto": 750,
+  "saldoDisponible": 2000
+}
+
+### 19. Procesar pago residentes - $500
+POST {{baseUrl}}/api/TiposPago/procesar
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 3,
+  "tipoPago": "residentes",
+  "monto": 500,
+  "saldoDisponible": 0,
+  "clienteId": "RES-12345"
+}
+
+### ================================
+### CASOS DE USO AVANZADOS
+### ================================
+
+### 20. Calcular múltiples montos para comparación
+POST {{baseUrl}}/api/ConfiguracionTiposPago/calcular-monto
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 1,
+  "montoBase": 2500
+}
+
+### 21. Calcular el mismo monto para Prepago
+POST {{baseUrl}}/api/ConfiguracionTiposPago/calcular-monto
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 2,
+  "montoBase": 2500
+}
+
+### 22. Calcular el mismo monto para Residentes
+POST {{baseUrl}}/api/ConfiguracionTiposPago/calcular-monto
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 3,
+  "montoBase": 2500
+}
+
+### ================================
+### VALIDACIÓN DE LÍMITES
+### ================================
+
+### 23. Probar límite de transacción Efectivo (exceder $5,000)
+POST {{baseUrl}}/api/ConfiguracionTiposPago/calcular-monto
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 1,
+  "montoBase": 6000
+}
+
+### 24. Probar límite de transacción Prepago (exceder $10,000)
+POST {{baseUrl}}/api/ConfiguracionTiposPago/calcular-monto
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 2,
+  "montoBase": 12000
+}
+
+### 25. Probar límite de transacción Residentes (exceder $15,000)
+POST {{baseUrl}}/api/ConfiguracionTiposPago/calcular-monto
+Content-Type: {{contentType}}
+
+{
+  "tipoPagoId": 3,
+  "montoBase": 18000
+}
+
+### ================================
+### RESPUESTAS ESPERADAS
+### ================================
+
+### Respuesta Configuración Efectivo:
+# {
+#   "id": 1,
+#   "tipoPagoId": 1,
+#   "tipoPagoNombre": "Efectivo",
+#   "moneda": "MXN",
+#   "simboloMoneda": "$",
+#   "limiteDiario": 50000,
+#   "limiteTransaccion": 5000,
+#   "comisionPorcentaje": 0,
+#   "comisionFija": 0,
+#   "estaActivo": true,
+#   "requiereValidacionAdicional": false,
+#   "tiempoEsperaSegundos": 15,
+#   "descuentoPorDefecto": 0
+# }
+
+### Respuesta Cálculo Prepago $500:
+# {
+#   "tipoPagoId": 2,
+#   "tipoPagoNombre": "Prepago",
+#   "montoBase": 500,
+#   "descuentoAplicado": 25,     // 5% descuento
+#   "comisionPorcentual": 7.125,  // 1.5% sobre (500-25)
+#   "comisionFija": 0,
+#   "montoFinal": 482.125,       // 500 - 25 + 7.125
+#   "moneda": "MXN",
+#   "simboloMoneda": "$",
+#   "excedeLimiteTransaccion": false
+# }
+
+### Respuesta Cálculo Residentes $1000:
+# {
+#   "tipoPagoId": 3,
+#   "tipoPagoNombre": "Residentes",
+#   "montoBase": 1000,
+#   "descuentoAplicado": 200,    // 20% descuento
+#   "comisionPorcentual": 0,
+#   "comisionFija": 0,
+#   "montoFinal": 800,           // 1000 - 200
+#   "moneda": "MXN",
+#   "simboloMoneda": "$",
+#   "excedeLimiteTransaccion": false
+# }
+
+### ================================
+### NOTAS DE IMPLEMENTACIÓN
+### ================================
+
+# CARACTERÍSTICAS IMPLEMENTADAS:
+# ✅ Tipos de pago activos: Efectivo, Prepago, Residentes
+# ✅ Configuración de moneda: MXN con símbolo $
+# ✅ Límites diarios configurables por tipo
+# ✅ Límites por transacción individual
+# ✅ Comisiones porcentuales y fijas
+# ✅ Descuentos por defecto configurables
+# ✅ Validación automática de límites
+# ✅ Cálculo automático de montos finales
+# ✅ Estado activo/inactivo por tipo
+# ✅ Configuraciones específicas en JSON
+# ✅ Tiempos de espera configurables
+# ✅ Validaciones adicionales opcionales
+
+# ENDPOINTS DISPONIBLES:
+# GET    /api/TiposPago - Todos los tipos
+# GET    /api/TiposPago/activos - Solo activos
+# GET    /api/TiposPago/estadisticas - Estadísticas de uso
+# POST   /api/TiposPago/inicializar-tipos-basicos - Setup inicial
+# POST   /api/TiposPago/procesar - Procesar pago
+# 
+# GET    /api/ConfiguracionTiposPago - Todas las configuraciones
+# POST   /api/ConfiguracionTiposPago - Crear configuración
+# PUT    /api/ConfiguracionTiposPago/{id} - Actualizar configuración
+# GET    /api/ConfiguracionTiposPago/tipo-pago/{id} - Por tipo
+# GET    /api/ConfiguracionTiposPago/activos-con-configuracion - Vista completa
+# POST   /api/ConfiguracionTiposPago/calcular-monto - Cálculo de montos
+# POST   /api/ConfiguracionTiposPago/inicializar-configuraciones-defecto - Setup

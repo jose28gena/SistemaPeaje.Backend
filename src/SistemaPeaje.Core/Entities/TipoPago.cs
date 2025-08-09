@@ -13,4 +13,5 @@ public class TipoPago : BaseEntity
 
     // Navigation Properties
     public virtual ICollection<Transaccion> Transacciones { get; set; } = new List<Transaccion>();
+    public virtual ConfiguracionTipoPago? Configuracion { get; set; }
 }
