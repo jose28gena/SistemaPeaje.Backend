@@ -96,6 +96,30 @@ public class EstacionesController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("{id}/carriles")]
+    public async Task<ActionResult<IEnumerable<CarrilDto>>> GetCarrilesByEstacion(int id)
+    {
+        var estacion = await _unitOfWork.Repository<Estacion>().GetByIdAsync(id);
+        if (estacion == null)
+        {
+            return NotFound($"Estación con ID {id} no encontrada");
+        }
+
+        var carriles = await _unitOfWork.Repository<Carril>().GetAsync(c => c.EstacionId == id);
+        var carrilesDto = carriles.Select(c => new CarrilDto
+        {
+            Id = c.Id,
+            Numero = c.Numero,
+            EstacionId = c.EstacionId,
+            Tipo = c.Tipo,
+            Estado = c.Estado,
+            FechaCreacion = c.FechaCreacion,
+            FechaActualizacion = c.FechaActualizacion
+        });
+
+        return Ok(carrilesDto);
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteEstacion(int id)
     {
