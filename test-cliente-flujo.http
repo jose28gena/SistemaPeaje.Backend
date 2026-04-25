@@ -1,0 +1,223 @@
+###
+### Pruebas del Flujo de Vida del Cliente
+### Backend Sistema de Peaje
+###
+
+### Variables
+@baseUrl = http://localhost:5000
+@clienteId = 0
+@vehiculoId = 0
+
+### 1. Crear un nuevo cliente (Alta)
+POST {{baseUrl}}/api/clientes-flujo/alta
+Content-Type: application/json
+
+{
+  "tipoPersona": "Fisica",
+  "nombre": "Juan",
+  "apellidoPaterno": "Pérez",
+  "apellidoMaterno": "García",
+  "rfc": "PEGJ850315H12",
+  "email": "juan.perez@email.com",
+  "telefono": "5555123456",
+  "direccion": "Av. Principal 123, Col. Centro",
+  "ciudad": "México",
+  "estado": "CDMX",
+  "codigoPostal": "01000",
+  "fechaNacimiento": "1985-03-15",
+  "observaciones": "Cliente nuevo de prueba",
+  "creadoPor": "admin@sistema.com"
+}
+
+### 2. Obtener información del cliente creado
+GET {{baseUrl}}/api/clientes-flujo/1
+
+### 3. Aprobar KYC del cliente
+POST {{baseUrl}}/api/clientes-flujo/1/aprobar-kyc
+Content-Type: application/json
+
+{
+  "aprobadoPor": "supervisor@sistema.com",
+  "observaciones": "Documentos válidos y verificados"
+}
+
+### 4. Configurar datos comerciales
+POST {{baseUrl}}/api/clientes-flujo/1/configurar-comercial
+Content-Type: application/json
+
+{
+  "modeloCuenta": "Prepago",
+  "limiteMensual": 5000.00,
+  "comisionPorcentaje": 3.5,
+  "descuentoPreferente": 10.0,
+  "configuradoPor": "comercial@sistema.com",
+  "observaciones": "Cliente categoría oro"
+}
+
+### 5. Asociar vehículo al cliente
+POST {{baseUrl}}/api/clientes-flujo/1/vehiculos
+Content-Type: application/json
+
+{
+  "marca": "Toyota",
+  "modelo": "Corolla",
+  "año": 2022,
+  "placas": "ABC-123-XYZ",
+  "color": "Blanco",
+  "numeroSerie": "JT2AK25E7T0123456",
+  "tipoVehiculoId": 1,
+  "observaciones": "Vehículo principal del cliente"
+}
+
+### 6. Asociar tarjeta RFID al vehículo
+POST {{baseUrl}}/api/clientes-flujo/vehiculos/1/tarjeta
+Content-Type: application/json
+
+{
+  "codigoRfid": "TAG001TEST",
+  "tipoTarjeta": "Estandar",
+  "observaciones": "Tarjeta principal del vehículo"
+}
+
+### 7. Realizar recarga de saldo
+POST {{baseUrl}}/api/clientes-flujo/1/recargas
+Content-Type: application/json
+
+{
+  "monto": 1000.00,
+  "metodoPago": "Transferencia",
+  "referenciaPago": "TRF123456789",
+  "observaciones": "Recarga inicial del cliente"
+}
+
+### 8. Generar factura
+POST {{baseUrl}}/api/clientes-flujo/1/facturas
+Content-Type: application/json
+
+{
+  "conceptos": [
+    {
+      "descripcion": "Recarga de saldo",
+      "cantidad": 1,
+      "precioUnitario": 1000.00,
+      "descuento": 0.00
+    }
+  ],
+  "metodoPago": "Transferencia",
+  "observaciones": "Factura por recarga inicial"
+}
+
+### 9. Crear ticket de soporte
+POST {{baseUrl}}/api/clientes-flujo/1/tickets
+Content-Type: application/json
+
+{
+  "categoria": "Tecnico",
+  "prioridad": "Media",
+  "asunto": "Problema con lectura de tarjeta RFID",
+  "descripcion": "La tarjeta RFID no es detectada correctamente en algunas casetas",
+  "reportadoPor": "cliente@email.com"
+}
+
+### 10. Actualizar ticket de soporte
+POST {{baseUrl}}/api/clientes-flujo/tickets/1/actualizar
+Content-Type: application/json
+
+{
+  "estado": "EnProceso",
+  "comentario": "Se revisó el sistema y se detectó problema con la antena",
+  "actualizadoPor": "tecnico@sistema.com"
+}
+
+### 11. Suspender cliente
+POST {{baseUrl}}/api/clientes-flujo/1/suspender
+Content-Type: application/json
+
+{
+  "motivoSuspension": "Solicitud del cliente",
+  "observaciones": "Cliente solicita suspensión temporal por viaje",
+  "suspendidoPor": "operador@sistema.com"
+}
+
+### 12. Reactivar cliente
+POST {{baseUrl}}/api/clientes-flujo/1/reactivar
+Content-Type: application/json
+
+{
+  "observaciones": "Cliente regresó de viaje, solicita reactivación",
+  "reactivadoPor": "operador@sistema.com"
+}
+
+### 13. Listar todos los clientes con filtros
+GET {{baseUrl}}/api/clientes-flujo?estado=Aprobado&skip=0&take=10
+
+### 14. Obtener reportes del cliente
+GET {{baseUrl}}/api/clientes-flujo/1/reportes
+
+### 15. Obtener historial de transacciones
+GET {{baseUrl}}/api/clientes-flujo/1/transacciones
+
+### 16. Cerrar cliente
+POST {{baseUrl}}/api/clientes-flujo/1/cerrar
+Content-Type: application/json
+
+{
+  "motivoCierre": "Solicitud del cliente",
+  "observaciones": "Cliente ya no requiere el servicio",
+  "cerradoPor": "supervisor@sistema.com"
+}
+
+### ================================================
+### Pruebas de casos especiales y validaciones
+### ================================================
+
+### 17. Intentar crear cliente con RFC duplicado
+POST {{baseUrl}}/api/clientes-flujo/alta
+Content-Type: application/json
+
+{
+  "tipoPersona": "Fisica",
+  "nombre": "María",
+  "apellidoPaterno": "González",
+  "apellidoMaterno": "López",
+  "rfc": "PEGJ850315H12",
+  "email": "maria.gonzalez@email.com",
+  "telefono": "5555987654",
+  "direccion": "Calle Secundaria 456",
+  "ciudad": "Guadalajara",
+  "estado": "Jalisco",
+  "codigoPostal": "44100",
+  "fechaNacimiento": "1990-08-22",
+  "creadoPor": "admin@sistema.com"
+}
+
+### 18. Intentar aprobar KYC de cliente ya aprobado
+POST {{baseUrl}}/api/clientes-flujo/1/aprobar-kyc
+Content-Type: application/json
+
+{
+  "aprobadoPor": "supervisor@sistema.com",
+  "observaciones": "Intento de doble aprobación"
+}
+
+### 19. Crear cliente persona moral
+POST {{baseUrl}}/api/clientes-flujo/alta
+Content-Type: application/json
+
+{
+  "tipoPersona": "Moral",
+  "razonSocial": "Transportes México SA de CV",
+  "rfc": "TME123456789",
+  "email": "contacto@transportesmexico.com",
+  "telefono": "5555444333",
+  "direccion": "Blvd. Industrial 789, Parque Industrial",
+  "ciudad": "Monterrey",
+  "estado": "Nuevo León",
+  "codigoPostal": "64000",
+  "representanteLegal": "Carlos Mendoza Ruiz",
+  "observaciones": "Empresa de transporte de carga",
+  "creadoPor": "admin@sistema.com"
+}
+
+### 20. Verificar que las nuevas entidades se crearon correctamente
+GET {{baseUrl}}/api/clientes-flujo

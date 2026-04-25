@@ -1,0 +1,13 @@
+{
+  "nombre": "Juan Pérez García",
+  "email": "juan.perez@email.com",
+  "telefono": "555-1234",
+  "rfc": "PEGJ800101XXX",
+  "razonSocial": "Juan Pérez García",
+  "direccionFiscal": "Av. Principal 123, Col. Centro, CDMX",
+  "codigoPostal": "01000",
+  "regimenFiscal": "PFAE",
+  "usoCfdi": "G01",
+  "modeloCuenta": "Prepago",
+  "comentarios": "Cliente prospecto inicial para prueba del sistema de flujo de clientes"
+}
