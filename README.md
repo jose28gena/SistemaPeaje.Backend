@@ -125,19 +125,37 @@ Para agregar nuevas migraciones (si es necesario):
 dotnet ef migrations add NombreMigracion --project src/SistemaPeaje.Infrastructure --startup-project src/SistemaPeaje.API
 ```
 
-### JWT
+### Secretos (JWT y administrador)
 
-Configurar las claves JWT en `appsettings.json`:
-```json
-{
-  "Jwt": {
-    "Key": "MiClaveSecretaSuperSeguraParaJWT2024SistemaPeaje",
-    "Issuer": "SistemaPeajeAPI",
-    "Audience": "SistemaPeajeClients",
-    "ExpireMinutes": 60
-  }
-}
+Los secretos **no** se guardan en el repositorio. `appsettings.json` solo trae valores vacíos y la API se niega a arrancar si falta la clave JWT.
+
+Define estas variables de entorno (o usa `dotnet user-secrets`):
+
+| Variable | Descripción |
+| --- | --- |
+| `Jwt__Key` | Clave de firma del token, mínimo 32 caracteres |
+| `Auth__AdminUsername` | Usuario para `POST /api/auth/login` |
+| `Auth__AdminPassword` | Contraseña para `POST /api/auth/login` |
+
+```powershell
+# PowerShell
+$env:Jwt__Key = "una-clave-larga-y-aleatoria-de-al-menos-32-caracteres"
+$env:Auth__AdminUsername = "admin"
+$env:Auth__AdminPassword = "<una-contraseña-segura>"
+dotnet run --project src/SistemaPeaje.API
 ```
+
+Con `user-secrets`:
+```bash
+dotnet user-secrets init --project src/SistemaPeaje.API
+dotnet user-secrets set "Jwt:Key" "una-clave-larga-y-aleatoria-de-al-menos-32-caracteres" --project src/SistemaPeaje.API
+dotnet user-secrets set "Auth:AdminUsername" "admin" --project src/SistemaPeaje.API
+dotnet user-secrets set "Auth:AdminPassword" "<una-contraseña-segura>" --project src/SistemaPeaje.API
+```
+
+Si `Auth__AdminUsername` o `Auth__AdminPassword` no están definidos, el login de administrador queda deshabilitado. `POST /api/auth/login-empleado` solo emite token para empleados activos registrados en la base de datos.
+
+El resto de parámetros del token (`Issuer`, `Audience`, `ExpireMinutes`) están en la sección `Jwt` de `appsettings.json`.
 
 ## Ejecución
 

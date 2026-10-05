@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using SistemaPeaje.Core.Entities;
+using SistemaPeaje.Core.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace SistemaPeaje.API.Controllers;
@@ -11,17 +14,28 @@ namespace SistemaPeaje.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IConfiguration _configuration;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public AuthController(IConfiguration configuration)
+    public AuthController(IConfiguration configuration, IUnitOfWork unitOfWork)
     {
         _configuration = configuration;
+        _unitOfWork = unitOfWork;
     }
 
+    /// <summary>
+    /// Login de administrador. Las credenciales se leen de la configuración
+    /// (Auth:AdminUsername / Auth:AdminPassword, p. ej. variables de entorno
+    /// Auth__AdminUsername y Auth__AdminPassword). Si no están definidas, el login queda deshabilitado.
+    /// </summary>
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest request)
     {
-        // Validación simple para desarrollo (en producción usar un servicio de autenticación)
-        if (request.Username == "admin" && request.Password == "admin123")
+        var adminUser = _configuration["Auth:AdminUsername"];
+        var adminPassword = _configuration["Auth:AdminPassword"];
+
+        if (!string.IsNullOrEmpty(adminUser) && !string.IsNullOrEmpty(adminPassword)
+            && SecureEquals(request.Username, adminUser)
+            && SecureEquals(request.Password, adminPassword))
         {
             var token = GenerateJwtToken(request.Username);
             return Ok(new { token });
@@ -30,17 +44,30 @@ public class AuthController : ControllerBase
         return Unauthorized("Credenciales inválidas");
     }
 
+    /// <summary>Login de empleado: solo se emite token si el documento corresponde a un empleado activo.</summary>
     [HttpPost("login-empleado")]
-    public IActionResult LoginEmpleado([FromBody] LoginEmpleadoRequest request)
+    public async Task<IActionResult> LoginEmpleado([FromBody] LoginEmpleadoRequest request)
     {
-        // Validación simple para empleados (en producción validar contra base de datos)
-        if (!string.IsNullOrEmpty(request.NumeroDocumento))
-        {
-            var token = GenerateJwtToken(request.NumeroDocumento, "Empleado");
-            return Ok(new { token, empleado = request.NumeroDocumento });
-        }
+        if (string.IsNullOrWhiteSpace(request.NumeroDocumento))
+            return Unauthorized("Número de documento requerido");
 
-        return Unauthorized("Número de documento requerido");
+        var documento = request.NumeroDocumento.Trim();
+        var empleados = await _unitOfWork.Repository<Empleado>()
+            .GetAsync(e => e.NumeroDocumento == documento && e.EsActivo);
+
+        if (empleados.Count == 0)
+            return Unauthorized("Empleado no encontrado o inactivo");
+
+        var token = GenerateJwtToken(documento, "Empleado");
+        return Ok(new { token, empleado = documento });
+    }
+
+    // Comparación en tiempo constante para no filtrar información por diferencias de tiempo.
+    private static bool SecureEquals(string? provided, string expected)
+    {
+        var a = SHA256.HashData(Encoding.UTF8.GetBytes(provided ?? string.Empty));
+        var b = SHA256.HashData(Encoding.UTF8.GetBytes(expected));
+        return CryptographicOperations.FixedTimeEquals(a, b);
     }
 
     private string GenerateJwtToken(string username, string role = "Admin")
